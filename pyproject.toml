@@ -1,7 +1,7 @@
 [project]
-name = "fastapi-template"
+name = "EScheduler"
 version = "0.1.0"
-description = "FKT FastAPI template"
+description = "FKT EScheduler"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -19,4 +19,6 @@ dependencies = [
     "python-logging-loki (>=0.3.1,<0.4.0)",
     "prometheus-fastapi-instrumentator (>=7.1.0,<8.0.0)",
     "itsdangerous (>=2.2.0,<3.0.0)",
+    "croniter (>=1.4.1,<2.0.0)",
+    "httpx (>=0.25.0,<0.26.0)",
 ]
