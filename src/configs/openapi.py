@@ -1,0 +1,3 @@
+OPENAPI_API_NAME = "FastAPI API Sever"
+OPENAPI_API_VERSION = "0.0.1 beta"
+OPENAPI_API_DESCRIPTION = "FastAPI Development Template"
