@@ -1,50 +1,62 @@
 import logging
 import re
-from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta
+from typing import List, Optional
 from zoneinfo import ZoneInfo
-from fastapi import HTTPException
-from croniter import croniter
 
+from croniter import croniter
+from fastapi import HTTPException
+
+from src.dependencies.repositories import get_scheduled_task_repository, get_task_execution_repository
+from src.models.enum.scheduler import TaskState, ExecutionStatus
 from src.models.pydantic.scheduler import (
     ScheduledTaskCreate, ScheduledTaskUpdate, ScheduledTaskResponse,
-    SchedulerStatsResponse, TaskStateUpdateRequest
+    SchedulerStatsResponse, TaskStateUpdateRequest, TaskExecutionResponse
 )
-from src.models.enum.scheduler import TaskState
-from src.repositories.scheduler import ScheduledTaskRepository
-from src.dependencies.repositories import get_scheduled_task_repository
+from src.repositories.scheduler import ScheduledTaskRepository, TaskExecutionRepository
+from src.services import scheduler_engine
 from src.services.execution_strategies.strategy_factory import ExecutionStrategyFactory
+from src.services.scheduler_engine import SchedulerEngine
+from src.dependencies.utils import get_scheduler_engine
 
 logger = logging.getLogger(__name__)
 
-# 在文件頂部添加導入
-from src.services.scheduler_engine import scheduler_engine
+
 
 
 class SchedulerService:
     def __init__(self):
         self.task_repository: ScheduledTaskRepository = get_scheduled_task_repository()
-        self.default_timezone = ZoneInfo("Asia/Taipei")
+        self.execution_repository: TaskExecutionRepository = get_task_execution_repository()
         self.strategy_factory = ExecutionStrategyFactory()
+        # 使用單例實例
+        self.scheduler_engine: SchedulerEngine = get_scheduler_engine()
 
-    def _get_timezone_aware_now(self, timezone_str: str = "Asia/Taipei") -> datetime:
-        """獲取帶時區信息的當前時間"""
-        try:
-            tz = ZoneInfo(timezone_str)
-            return datetime.now(tz)
-        except Exception:
-            return datetime.now(self.default_timezone)
+    def _get_timezone_aware_now(self, timezone: str = "Asia/Taipei") -> datetime:
+        """獲取帶時區的當前時間"""
+        tz = ZoneInfo(timezone)
+        return datetime.now(tz)
 
     async def trigger_task_now(self, task_id: int) -> bool:
         """立即觸發任務執行（使用策略模式）"""
         execution_start_time = self._get_timezone_aware_now()
         task = None
+        execution_id = None
         
         try:
             # 獲取任務信息
             task = await self.task_repository.get_by_id(task_id)
             logger.info(f"開始執行任務: {task.name} (ID: {task.id})")
             logger.info(f"任務目標: {task.target_type} - {task.target_arn}")
+            
+            # 創建 TaskExecution 記錄
+            execution_record = await self.execution_repository.create(
+                task_id=task_id,
+                status=ExecutionStatus.RUNNING,
+                started_at=execution_start_time,
+                attempt_number=1
+            )
+            execution_id = execution_record.id
             
             # 更新執行次數
             await self.task_repository.increment_execution_count(task_id)
@@ -65,6 +77,16 @@ class SchedulerService:
                 next_execution
             )
             
+            # 更新 TaskExecution 記錄
+            status = ExecutionStatus.SUCCEEDED if execution_result.success else ExecutionStatus.FAILED
+            await self.execution_repository.update_execution_result(
+                execution_id=execution_id,
+                status=status,
+                response_code=execution_result.status_code,
+                response_body=execution_result.message,
+                error_message=None if execution_result.success else execution_result.message
+            )
+            
             if execution_result.success:
                 logger.info(f"任務 {task.name} 執行成功，耗時 {execution_result.execution_time:.2f} 秒")
                 logger.info(f"執行結果: {execution_result.message}")
@@ -78,13 +100,21 @@ class SchedulerService:
             execution_end_time = self._get_timezone_aware_now()
             execution_duration = (execution_end_time - execution_start_time).total_seconds()
             
+            # 更新執行記錄為失敗狀態
+            if execution_id:
+                await self.execution_repository.update_execution_result(
+                    execution_id=execution_id,
+                    status=ExecutionStatus.FAILED,
+                    error_message=str(e)
+                )
+            
             error_msg = f"任務執行失敗: {str(e)}"
             logger.error(f"任務 {task.name if task else task_id} 執行失敗，耗時 {execution_duration:.2f} 秒")
             logger.error(f"錯誤詳情: {error_msg}")
             
             raise HTTPException(status_code=500, detail=error_msg)
 
-    # 修改 create_task 方法
+    # 在需要的地方使用 self.scheduler_engine
     async def create_task(self, task_data: ScheduledTaskCreate) -> ScheduledTaskResponse:
         """創建新的排程任務"""
         # 檢查任務名稱是否已存在
@@ -105,7 +135,7 @@ class SchedulerService:
         
         # 🔥 新增：添加到排程引擎
         if task.state == TaskState.ENABLED:
-            await scheduler_engine.add_job(task.id, task.schedule_expression, {
+            await self.scheduler_engine.add_job(task.id, task.schedule_expression, {
                 'id': task.id,
                 'name': task.name,
                 'target_type': task.target_type,
@@ -231,9 +261,16 @@ class SchedulerService:
         except Exception:
             raise HTTPException(status_code=404, detail="任務不存在")
 
+    # 修改這個方法，讓它真正返回執行記錄
+    
     async def get_task_executions(self, task_id: int, limit: int = 50):
-        """獲取任務執行記錄（返回空列表）"""
-        return []
+        """獲取任務執行記錄"""
+        try:
+            executions = await self.execution_repository.get_by_task_id(task_id)
+            return [TaskExecutionResponse.from_orm(execution) for execution in executions[:limit]]
+        except Exception as e:
+            logger.error(f"獲取任務執行記錄失敗: {e}")
+            return []
 
     async def get_scheduler_stats(self) -> SchedulerStatsResponse:
         """獲取排程器統計信息（簡化版）"""

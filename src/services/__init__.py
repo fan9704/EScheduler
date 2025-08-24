@@ -1,4 +1,4 @@
 from .scheduler import SchedulerService
-from .scheduler_engine import scheduler_engine
+from .scheduler_engine import SchedulerEngine
 
-__all__ = ["SchedulerService", "scheduler_engine"]
+__all__ = ["SchedulerService", "SchedulerEngine"]

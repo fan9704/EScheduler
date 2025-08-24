@@ -1,25 +1,28 @@
-from typing import List, Optional
+from typing import List
 from datetime import datetime
-from src.repositories.base import Repository
-from src.models.tortoise.scheduler import ScheduledTask, TaskExecution
+from zoneinfo import ZoneInfo
+
 from src.models.enum.scheduler import TaskState, ExecutionStatus
+from src.models.tortoise.scheduler import ScheduledTask, TaskExecution
+from src.repositories.base import Repository
 
 
 class ScheduledTaskRepository(Repository):
     def __init__(self):
         self.model = ScheduledTask
 
-    async def get_by_name(self, name: str) -> Optional[ScheduledTask]:
+    async def get_by_name(self, name: str) -> ScheduledTask:
         """根據名稱獲取任務"""
         return await self.model.filter(name=name).first()
-
-    async def get_enabled_tasks(self) -> List[ScheduledTask]:
-        """獲取所有啟用的任務"""
-        return await self.model.filter(state=TaskState.ENABLED)
 
     async def get_tasks_by_state(self, state: TaskState) -> List[ScheduledTask]:
         """根據狀態獲取任務"""
         return await self.model.filter(state=state)
+
+    def _get_timezone_aware_now(self, timezone: str = "Asia/Taipei") -> datetime:
+        """獲取帶時區的當前時間"""
+        tz = ZoneInfo(timezone)
+        return datetime.now(tz)
 
     async def update_execution_time(self, task_id: int, last_execution: datetime, next_execution: datetime = None):
         """更新任務執行時間"""
@@ -50,6 +53,11 @@ class TaskExecutionRepository(Repository):
     def __init__(self):
         self.model = TaskExecution
 
+    def _get_timezone_aware_now(self, timezone: str = "Asia/Taipei") -> datetime:
+        """獲取帶時區的當前時間"""
+        tz = ZoneInfo(timezone)
+        return datetime.now(tz)
+
     async def get_by_task_id(self, task_id: int) -> List[TaskExecution]:
         """獲取特定任務的執行記錄"""
         return await self.model.filter(task_id=task_id).order_by("-started_at")
@@ -75,7 +83,7 @@ class TaskExecutionRepository(Repository):
         """更新執行結果"""
         update_data = {
             "status": status,
-            "completed_at": datetime.now()
+            "completed_at": self._get_timezone_aware_now()  # 使用帶時區的時間
         }
         if response_code is not None:
             update_data["response_code"] = response_code

@@ -24,7 +24,9 @@ async def lifespan(app: FastAPI):
     
     # 🔥 啟動排程引擎
     try:
-        from src.services.scheduler_engine import scheduler_engine
+        from src.dependencies.utils import get_scheduler_engine
+        from src.services.scheduler_engine import SchedulerEngine
+        scheduler_engine: SchedulerEngine = get_scheduler_engine()
         await scheduler_engine.start()
         logger.info("排程引擎啟動成功")
     except Exception as e:

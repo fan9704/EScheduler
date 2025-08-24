@@ -97,15 +97,26 @@ async def trigger_task(
     task_id: int = Path(..., description="任務 ID"),
     service: SchedulerService = Depends(get_scheduler_service)
 ) -> JSONResponse:
-    """手動觸發任務執行"""
+    """立即觸發任務執行"""
     try:
         success = await service.trigger_task_now(task_id)
+        if success:
+            return JSONResponse(
+                status_code=200,
+                content={"message": "任務觸發成功", "task_id": task_id}
+            )
+        else:
+            return JSONResponse(
+                status_code=500,
+                content={"message": "任務執行失敗", "task_id": task_id}
+            )
+    except HTTPException as e:
         return JSONResponse(
-            content={"message": "任務已成功觸發", "task_id": task_id},
-            status_code=200 if success else 400
+            status_code=e.status_code,
+            content={"message": e.detail, "task_id": task_id}
         )
     except Exception as e:
         return JSONResponse(
-            content={"message": f"觸發任務失敗: {str(e)}", "task_id": task_id},
-            status_code=500
+            status_code=500,
+            content={"message": f"觸發任務失敗: {str(e)}", "task_id": task_id}
         )
