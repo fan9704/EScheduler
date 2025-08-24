@@ -48,22 +48,10 @@ async def init_db(app: FastAPI):
             }
         }
     }
-    # register_tortoise(
-    #     app,
-    #     config=config,
-    #     generate_schemas=True
-    # )
     await Tortoise.init(
         config=config
     )
     await Tortoise.generate_schemas()
-
-
-    print("初始化資料庫模型完成")
-    print(Tortoise.apps)
-
-
-
 
 def init_routers(app: FastAPI):
     """

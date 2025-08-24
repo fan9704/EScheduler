@@ -2,51 +2,96 @@ import logging
 import re
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 from fastapi import HTTPException
 from croniter import croniter
 
 from src.models.pydantic.scheduler import (
     ScheduledTaskCreate, ScheduledTaskUpdate, ScheduledTaskResponse,
-    TaskExecutionResponse, SchedulerStatsResponse, TaskStateUpdateRequest
+    SchedulerStatsResponse, TaskStateUpdateRequest
 )
-from src.models.enum.scheduler import TaskState, ExecutionStatus
-from src.repositories.scheduler import ScheduledTaskRepository, TaskExecutionRepository
-from src.dependencies.repositories import get_scheduled_task_repository, get_task_execution_repository
-from src.services.scheduler_engine import scheduler_engine
+from src.models.enum.scheduler import TaskState
+from src.repositories.scheduler import ScheduledTaskRepository
+from src.dependencies.repositories import get_scheduled_task_repository
+from src.services.execution_strategies.strategy_factory import ExecutionStrategyFactory
 
 logger = logging.getLogger(__name__)
+
+# 在文件頂部添加導入
+from src.services.scheduler_engine import scheduler_engine
 
 
 class SchedulerService:
     def __init__(self):
         self.task_repository: ScheduledTaskRepository = get_scheduled_task_repository()
-        self.execution_repository: TaskExecutionRepository = get_task_execution_repository()
-        self.engine = scheduler_engine
+        self.default_timezone = ZoneInfo("Asia/Taipei")
+        self.strategy_factory = ExecutionStrategyFactory()
 
-    def _task_to_dict(self, task) -> Dict[str, Any]:
-        """將 Tortoise ORM 模型轉換為字典"""
-        return {
-            'id': task.id,
-            'name': task.name,
-            'description': task.description,
-            'schedule_expression': task.schedule_expression,
-            'timezone': task.timezone,
-            'target_type': task.target_type,
-            'target_arn': task.target_arn,
-            'target_input': task.target_input,
-            'state': task.state,
-            'max_retry_attempts': task.max_retry_attempts,
-            'retry_policy': task.retry_policy,
-            'dead_letter_config': task.dead_letter_config
-        }
+    def _get_timezone_aware_now(self, timezone_str: str = "Asia/Taipei") -> datetime:
+        """獲取帶時區信息的當前時間"""
+        try:
+            tz = ZoneInfo(timezone_str)
+            return datetime.now(tz)
+        except Exception:
+            return datetime.now(self.default_timezone)
 
+    async def trigger_task_now(self, task_id: int) -> bool:
+        """立即觸發任務執行（使用策略模式）"""
+        execution_start_time = self._get_timezone_aware_now()
+        task = None
+        
+        try:
+            # 獲取任務信息
+            task = await self.task_repository.get_by_id(task_id)
+            logger.info(f"開始執行任務: {task.name} (ID: {task.id})")
+            logger.info(f"任務目標: {task.target_type} - {task.target_arn}")
+            
+            # 更新執行次數
+            await self.task_repository.increment_execution_count(task_id)
+            
+            # 創建執行策略
+            strategy = self.strategy_factory.create_strategy(task.target_type)
+            
+            # 執行任務
+            execution_result = await strategy.execute(task.target_arn, task.target_input or {})
+            
+            # 計算下次執行時間
+            next_execution = self._calculate_next_execution(task.schedule_expression, task.timezone)
+            
+            # 更新最後執行時間
+            await self.task_repository.update_execution_time(
+                task_id, 
+                execution_start_time,
+                next_execution
+            )
+            
+            if execution_result.success:
+                logger.info(f"任務 {task.name} 執行成功，耗時 {execution_result.execution_time:.2f} 秒")
+                logger.info(f"執行結果: {execution_result.message}")
+            else:
+                logger.error(f"任務 {task.name} 執行失敗: {execution_result.message}")
+                raise Exception(execution_result.message)
+            
+            return execution_result.success
+            
+        except Exception as e:
+            execution_end_time = self._get_timezone_aware_now()
+            execution_duration = (execution_end_time - execution_start_time).total_seconds()
+            
+            error_msg = f"任務執行失敗: {str(e)}"
+            logger.error(f"任務 {task.name if task else task_id} 執行失敗，耗時 {execution_duration:.2f} 秒")
+            logger.error(f"錯誤詳情: {error_msg}")
+            
+            raise HTTPException(status_code=500, detail=error_msg)
+
+    # 修改 create_task 方法
     async def create_task(self, task_data: ScheduledTaskCreate) -> ScheduledTaskResponse:
         """創建新的排程任務"""
         # 檢查任務名稱是否已存在
         existing_task = await self.task_repository.get_by_name(task_data.name)
         if existing_task:
             raise HTTPException(status_code=400, detail="任務名稱已存在")
-
+    
         # 驗證排程表達式
         next_execution = self._calculate_next_execution(task_data.schedule_expression, task_data.timezone)
         
@@ -58,11 +103,71 @@ class SchedulerService:
         task = await self.task_repository.create(**task_dict)
         logger.info(f"創建新任務: {task.name} (ID: {task.id})")
         
-        # 添加到排程引擎
+        # 🔥 新增：添加到排程引擎
         if task.state == TaskState.ENABLED:
-            await self.engine.add_job(task.id, task.schedule_expression, self._task_to_dict(task))
+            await scheduler_engine.add_job(task.id, task.schedule_expression, {
+                'id': task.id,
+                'name': task.name,
+                'target_type': task.target_type,
+                'target_arn': task.target_arn,
+                'target_input': task.target_input
+            })
+            logger.info(f"任務 {task.name} 已添加到排程引擎")
         
         return ScheduledTaskResponse.from_orm(task)
+    
+    # 修改 update_task 方法
+    async def update_task(self, task_id: int, task_data: ScheduledTaskUpdate) -> ScheduledTaskResponse:
+        """更新任務"""
+        try:
+            task = await self.task_repository.get_by_id(task_id)
+        except Exception:
+            raise HTTPException(status_code=404, detail="任務不存在")
+    
+        # 更新數據
+        update_dict = task_data.dict(exclude_unset=True)
+        
+        # 如果更新了排程表達式，重新計算下次執行時間
+        if "schedule_expression" in update_dict:
+            timezone = update_dict.get("timezone", task.timezone)
+            next_execution = self._calculate_next_execution(update_dict["schedule_expression"], timezone)
+            update_dict["next_execution_time"] = next_execution
+    
+        # 執行更新
+        for key, value in update_dict.items():
+            setattr(task, key, value)
+        
+        await task.save()
+        logger.info(f"更新任務: {task.name} (ID: {task.id})")
+        
+        # 🔥 新增：更新排程引擎
+        if task.state == TaskState.ENABLED:
+            await scheduler_engine.add_job(task.id, task.schedule_expression, {
+                'id': task.id,
+                'name': task.name,
+                'target_type': task.target_type,
+                'target_arn': task.target_arn,
+                'target_input': task.target_input
+            })
+        else:
+            await scheduler_engine.remove_job(task.id)
+        
+        return ScheduledTaskResponse.from_orm(task)
+    
+    # 修改 delete_task 方法
+    async def delete_task(self, task_id: int) -> bool:
+        """刪除任務"""
+        try:
+            task = await self.task_repository.get_by_id(task_id)
+            
+            # 🔥 新增：從排程引擎移除
+            await scheduler_engine.remove_job(task_id)
+            
+            await self.task_repository.delete_object(task)
+            logger.info(f"刪除任務: {task.name} (ID: {task.id})")
+            return True
+        except Exception:
+            raise HTTPException(status_code=404, detail="任務不存在")
 
     async def get_task(self, task_id: int) -> ScheduledTaskResponse:
         """獲取單個任務"""
@@ -104,22 +209,12 @@ class SchedulerService:
         await task.save()
         logger.info(f"更新任務: {task.name} (ID: {task.id})")
         
-        # 更新排程引擎中的任務
-        if task.state == TaskState.ENABLED:
-            await self.engine.add_job(task.id, task.schedule_expression, self._task_to_dict(task))
-        else:
-            await self.engine.remove_job(task.id)
-        
         return ScheduledTaskResponse.from_orm(task)
 
     async def delete_task(self, task_id: int) -> bool:
         """刪除任務"""
         try:
             task = await self.task_repository.get_by_id(task_id)
-            
-            # 從排程引擎移除
-            await self.engine.remove_job(task_id)
-            
             await self.task_repository.delete_object(task)
             logger.info(f"刪除任務: {task.name} (ID: {task.id})")
             return True
@@ -131,55 +226,28 @@ class SchedulerService:
         try:
             await self.task_repository.update_state(task_id, state_data.state)
             task = await self.task_repository.get_by_id(task_id)
-            
-            # 根據狀態更新排程引擎
-            if state_data.state == TaskState.ENABLED:
-                await self.engine.add_job(task.id, task.schedule_expression, self._task_to_dict(task))
-            else:
-                await self.engine.remove_job(task.id)
-            
             logger.info(f"更新任務狀態: {task.name} -> {state_data.state}")
             return ScheduledTaskResponse.from_orm(task)
         except Exception:
             raise HTTPException(status_code=404, detail="任務不存在")
 
-    async def trigger_task_now(self, task_id: int) -> bool:
-        """立即觸發任務執行"""
-        try:
-            task = await self.task_repository.get_by_id(task_id)
-            await self.engine.trigger_job_now(task.id, self._task_to_dict(task))
-            return True
-        except Exception as e:
-            logger.error(f"觸發任務 {task_id} 失敗: {e}")
-            raise HTTPException(status_code=400, detail=f"觸發任務失敗: {str(e)}")
-
-    async def get_task_executions(self, task_id: int, limit: int = 50) -> List[TaskExecutionResponse]:
-        """獲取任務執行記錄"""
-        executions = await self.execution_repository.get_by_task_id(task_id)
-        return [TaskExecutionResponse.from_orm(execution) for execution in executions[:limit]]
+    async def get_task_executions(self, task_id: int, limit: int = 50):
+        """獲取任務執行記錄（返回空列表）"""
+        return []
 
     async def get_scheduler_stats(self) -> SchedulerStatsResponse:
-        """獲取排程器統計信息"""
-        # 任務統計
+        """獲取排程器統計信息（簡化版）"""
         all_tasks = await self.task_repository.find_all()
         enabled_tasks = await self.task_repository.get_tasks_by_state(TaskState.ENABLED)
         disabled_tasks = await self.task_repository.get_tasks_by_state(TaskState.DISABLED)
-        
-        # 今日執行統計
-        today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-        today_end = today_start + timedelta(days=1)
-        
-        today_executions = await self.execution_repository.get_executions_by_date_range(today_start, today_end)
-        successful_executions = [e for e in today_executions if e.status == ExecutionStatus.SUCCEEDED]
-        failed_executions = [e for e in today_executions if e.status == ExecutionStatus.FAILED]
         
         return SchedulerStatsResponse(
             total_tasks=len(all_tasks),
             enabled_tasks=len(enabled_tasks),
             disabled_tasks=len(disabled_tasks),
-            total_executions_today=len(today_executions),
-            successful_executions_today=len(successful_executions),
-            failed_executions_today=len(failed_executions)
+            total_executions_today=0,
+            successful_executions_today=0,
+            failed_executions_today=0
         )
 
     async def search_tasks(self, keyword: str) -> List[ScheduledTaskResponse]:
@@ -188,16 +256,17 @@ class SchedulerService:
         return [ScheduledTaskResponse.from_orm(task) for task in tasks]
 
     def _calculate_next_execution(self, schedule_expression: str, timezone: str = "Asia/Taipei") -> datetime:
-        """計算下次執行時間"""
+        """計算下次執行時間（帶時區）"""
         try:
+            tz = ZoneInfo(timezone)
+            current_time = datetime.now(tz)
+            
             if schedule_expression.startswith('cron(') and schedule_expression.endswith(')'):
-                # 提取 cron 表達式
                 cron_expr = schedule_expression[5:-1]
-                cron = croniter(cron_expr, datetime.now())
+                cron = croniter(cron_expr, current_time)
                 return cron.get_next(datetime)
             
             elif schedule_expression.startswith('rate(') and schedule_expression.endswith(')'):
-                # 提取 rate 表達式
                 rate_expr = schedule_expression[5:-1]
                 match = re.match(r'(\d+)\s+(minute|minutes|hour|hours|day|days)', rate_expr)
                 if not match:
@@ -215,7 +284,18 @@ class SchedulerService:
                 else:
                     raise ValueError(f"不支援的時間單位: {unit}")
                 
-                return datetime.now() + delta
+                return current_time + delta
+            
+            elif schedule_expression.startswith('at(') and schedule_expression.endswith(')'):
+                datetime_str = schedule_expression[3:-1]
+                # 解析 ISO 格式的日期時間，如果沒有時區信息則添加指定時區
+                dt = datetime.fromisoformat(datetime_str)
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=tz)
+                return dt
+            
+            elif schedule_expression == 'once':
+                return current_time + timedelta(seconds=1)
             
             else:
                 raise ValueError("無效的排程表達式格式")

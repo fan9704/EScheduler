@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 from src.services.scheduler import SchedulerService
 from src.models.pydantic.scheduler import (
     ScheduledTaskCreate, ScheduledTaskUpdate, ScheduledTaskResponse,
-    TaskExecutionResponse, SchedulerStatsResponse, TaskStateUpdateRequest
+    SchedulerStatsResponse, TaskStateUpdateRequest
 )
 from src.models.enum.scheduler import TaskState
 from src.dependencies.services import get_scheduler_service
@@ -13,10 +13,7 @@ from src.dependencies.services import get_scheduler_service
 router = APIRouter()
 
 
-@router.post("/",
-             summary="創建排程任務",
-             description="創建新的排程任務",
-             response_model=ScheduledTaskResponse)
+@router.post("/", response_model=ScheduledTaskResponse)
 async def create_task(
     task_data: ScheduledTaskCreate,
     service: SchedulerService = Depends(get_scheduler_service)
@@ -25,10 +22,7 @@ async def create_task(
     return await service.create_task(task_data)
 
 
-@router.get("/",
-            summary="獲取所有排程任務",
-            description="獲取所有排程任務列表",
-            response_model=List[ScheduledTaskResponse])
+@router.get("/", response_model=List[ScheduledTaskResponse])
 async def get_all_tasks(
     state: Optional[TaskState] = Query(None, description="任務狀態過濾"),
     service: SchedulerService = Depends(get_scheduler_service)
@@ -37,10 +31,7 @@ async def get_all_tasks(
     return await service.get_all_tasks(state)
 
 
-@router.get("/stats",
-            summary="獲取排程器統計信息",
-            description="獲取排程器的統計數據",
-            response_model=SchedulerStatsResponse)
+@router.get("/stats", response_model=SchedulerStatsResponse)
 async def get_scheduler_stats(
     service: SchedulerService = Depends(get_scheduler_service)
 ) -> SchedulerStatsResponse:
@@ -48,10 +39,7 @@ async def get_scheduler_stats(
     return await service.get_scheduler_stats()
 
 
-@router.get("/search",
-            summary="搜索排程任務",
-            description="根據關鍵字搜索排程任務",
-            response_model=List[ScheduledTaskResponse])
+@router.get("/search", response_model=List[ScheduledTaskResponse])
 async def search_tasks(
     keyword: str = Query(..., description="搜索關鍵字"),
     service: SchedulerService = Depends(get_scheduler_service)
@@ -60,10 +48,7 @@ async def search_tasks(
     return await service.search_tasks(keyword)
 
 
-@router.get("/{task_id}",
-            summary="獲取單個排程任務",
-            description="根據 ID 獲取特定的排程任務",
-            response_model=ScheduledTaskResponse)
+@router.get("/{task_id}", response_model=ScheduledTaskResponse)
 async def get_task(
     task_id: int = Path(..., description="任務 ID"),
     service: SchedulerService = Depends(get_scheduler_service)
@@ -72,10 +57,7 @@ async def get_task(
     return await service.get_task(task_id)
 
 
-@router.put("/{task_id}",
-            summary="更新排程任務",
-            description="更新指定的排程任務",
-            response_model=ScheduledTaskResponse)
+@router.put("/{task_id}", response_model=ScheduledTaskResponse)
 async def update_task(
     task_id: int = Path(..., description="任務 ID"),
     task_data: ScheduledTaskUpdate = ...,
@@ -85,9 +67,8 @@ async def update_task(
     return await service.update_task(task_id, task_data)
 
 
-@router.delete("/{task_id}",
-               summary="刪除排程任務",
-               description="刪除指定的排程任務")
+# 修復：移除 response_model=JSONResponse，改為 response_model=None 或不指定
+@router.delete("/{task_id}")
 async def delete_task(
     task_id: int = Path(..., description="任務 ID"),
     service: SchedulerService = Depends(get_scheduler_service)
@@ -100,10 +81,7 @@ async def delete_task(
     )
 
 
-@router.patch("/{task_id}/state",
-              summary="更新任務狀態",
-              description="更新指定任務的狀態",
-              response_model=ScheduledTaskResponse)
+@router.patch("/{task_id}/state", response_model=ScheduledTaskResponse)
 async def update_task_state(
     task_id: int = Path(..., description="任務 ID"),
     state_data: TaskStateUpdateRequest = ...,
@@ -113,22 +91,8 @@ async def update_task_state(
     return await service.update_task_state(task_id, state_data)
 
 
-@router.get("/{task_id}/executions",
-            summary="獲取任務執行記錄",
-            description="獲取指定任務的執行歷史記錄",
-            response_model=List[TaskExecutionResponse])
-async def get_task_executions(
-    task_id: int = Path(..., description="任務 ID"),
-    limit: int = Query(50, ge=1, le=200, description="返回記錄數量限制"),
-    service: SchedulerService = Depends(get_scheduler_service)
-) -> List[TaskExecutionResponse]:
-    """獲取任務執行記錄"""
-    return await service.get_task_executions(task_id, limit)
-
-
-@router.post("/{task_id}/trigger",
-             summary="手動觸發任務執行",
-             description="立即執行指定的排程任務")
+# 修復：移除 response_model=JSONResponse
+@router.post("/{task_id}/trigger")
 async def trigger_task(
     task_id: int = Path(..., description="任務 ID"),
     service: SchedulerService = Depends(get_scheduler_service)

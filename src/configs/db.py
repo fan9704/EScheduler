@@ -12,7 +12,6 @@ POSTGRES_TEST_DB = os.getenv("POSTGRES_TEST_DB")
 POSTGRES_DB_URL = f"postgres://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
 DB_MODELS = ["src.models.tortoise"]
 SQLITE_DB_URL = "sqlite://:memory:"
-print(POSTGRES_DB_URL)
 
 
 class TortoiseSettings:

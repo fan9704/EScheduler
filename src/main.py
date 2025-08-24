@@ -12,28 +12,33 @@ logger = logging.getLogger(__name__)
 instrumentator = Instrumentator()
 
 
+# 在 lifespan 中啟動排程引擎
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """應用程序生命週期管理"""
     logger.info("啟動應用程序...")
     
-    # 暫時註釋掉排程引擎啟動，先確保基本功能正常
-    # try:
-    #     from src.services.scheduler_engine import scheduler_engine
-    #     await scheduler_engine.start()
-    #     logger.info("排程引擎啟動成功")
-    # except Exception as e:
-    #     logger.error(f"排程引擎啟動失敗: {e}")
+    # 等待資料庫完全初始化
     await init_db(app)
+    await asyncio.sleep(3)
+    
+    # 🔥 啟動排程引擎
+    try:
+        from src.services.scheduler_engine import scheduler_engine
+        await scheduler_engine.start()
+        logger.info("排程引擎啟動成功")
+    except Exception as e:
+        logger.error(f"排程引擎啟動失敗: {e}")
+    
     yield
     
     # 關閉服務
     logger.info("關閉應用程序...")
-    # try:
-    #     from src.services.scheduler_engine import scheduler_engine
-    #     await scheduler_engine.stop()
-    # except Exception as e:
-    #     logger.error(f"關閉排程引擎失敗: {e}")
+    try:
+        from src.services.scheduler_engine import scheduler_engine
+        await scheduler_engine.stop()
+    except Exception as e:
+        logger.error(f"關閉排程引擎失敗: {e}")
 
 
 app = FastAPI(

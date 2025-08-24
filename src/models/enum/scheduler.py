@@ -12,9 +12,7 @@ class TargetType(str, Enum):
     """目標類型枚舉"""
     HTTP = "http"
     WEBHOOK = "webhook"
-    LAMBDA = "lambda"
-    SQS = "sqs"
-    SNS = "sns"
+    RABBITMQ = "rabbitmq"  # 替換 SQS
     EMAIL = "email"
 
 
@@ -33,3 +31,4 @@ class ScheduleType(str, Enum):
     CRON = "cron"
     RATE = "rate"
     ONE_TIME = "one_time"
+    AT = "at"
