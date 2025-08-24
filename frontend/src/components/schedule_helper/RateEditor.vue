@@ -44,10 +44,12 @@
       <v-btn
         color="primary"
         block
+        size="large"
         :disabled="!isValid"
         @click="generateExpression"
       >
-        生成表達式
+        <v-icon class="mr-2">mdi-creation</v-icon>
+        生成 Rate 表達式
       </v-btn>
     </v-card-text>
   </v-card>
@@ -93,6 +95,7 @@ const isValid = computed(() => {
 
 const generateExpression = () => {
   if (isValid.value) {
+    console.log('生成 Rate 表達式:', { value: rateValue.value, unit: rateUnit.value }) // 調試用
     emit('generate', {
       value: rateValue.value,
       unit: rateUnit.value,

@@ -62,9 +62,11 @@
       <v-btn
         color="primary"
         block
+        size="large"
         @click="generateExpression"
       >
-        生成表達式
+        <v-icon class="mr-2">mdi-creation</v-icon>
+        生成 Cron 表達式
       </v-btn>
     </v-card-text>
   </v-card>
@@ -136,6 +138,7 @@ const cronExpression = computed(() => {
 })
 
 const generateExpression = () => {
+  console.log('生成 Cron 表達式:', cronFields.value) // 調試用
   emit('generate', cronFields.value)
 }
 </script>

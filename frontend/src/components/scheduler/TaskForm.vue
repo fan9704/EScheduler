@@ -33,27 +33,47 @@
               rows="2"
             />
           </v-col>
-          <v-col cols="12" md="8">
-            <v-text-field
-              v-model="formData.schedule_expression"
-              label="排程表達式"
-              variant="outlined"
-              density="compact"
-              :rules="[rules.required]"
-              required
-            />
+          
+          <!-- 排程表達式輸入區域 -->
+          <v-col cols="12">
+            <div class="d-flex gap-2">
+              <v-text-field
+                ref="scheduleExpressionRef"
+                v-model="formData.schedule_expression"
+                label="排程表達式"
+                variant="outlined"
+                density="compact"
+                :rules="[rules.required]"
+                placeholder="例如：cron(0 9 * * 1-5) 或 rate(5 minutes)"
+                required
+                class="flex-grow-1"
+              />
+              <v-btn
+                color="primary"
+                variant="outlined"
+                size="large"
+                @click="openScheduleWizard"
+              >
+                <v-icon class="mr-2">mdi-wizard-hat</v-icon>
+                排程精靈
+              </v-btn>
+            </div>
+            <div class="text-caption text-medium-emphasis mt-1">
+              使用排程精靈可以輕鬆創建 Cron 或 Rate 表達式
+            </div>
+            <!-- 顯示表達式狀態 -->
+            <div v-if="formData.schedule_expression" class="mt-2">
+              <v-chip
+                size="small"
+                color="success"
+                variant="outlined"
+              >
+                <v-icon class="mr-1" size="16">mdi-check</v-icon>
+                已設置：{{ formData.schedule_expression }}
+              </v-chip>
+            </div>
           </v-col>
-          <v-col cols="12" md="4">
-            <v-btn
-              variant="outlined"
-              block
-              to="/schedule-helper"
-              target="_blank"
-            >
-              <v-icon class="mr-2">mdi-help-circle-outline</v-icon>
-              排程助手
-            </v-btn>
-          </v-col>
+          
           <v-col cols="12" md="6">
             <v-text-field
               v-model="formData.target_arn"
@@ -104,20 +124,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import type { ScheduledTaskCreate, ScheduledTaskResponse, TargetType } from '@/models/scheduler'
 
 const props = defineProps<{
-  initialData?: ScheduledTaskResponse
+  initialData?: ScheduledTaskResponse | Partial<ScheduledTaskCreate>
   loading?: boolean
 }>()
 
 const emit = defineEmits<{
   submit: [data: ScheduledTaskCreate]
   cancel: []
+  'open-schedule-wizard': [formData: Partial<ScheduledTaskCreate>]
 }>()
 
 const formRef = ref()
+const scheduleExpressionRef = ref()
 const targetInputText = ref('')
 
 const formData = ref({
@@ -131,7 +153,9 @@ const formData = ref({
   max_retry_attempts: 3,
 })
 
-const isEdit = computed(() => !!props.initialData)
+const isEdit = computed(() => {
+  return !!(props.initialData && 'id' in props.initialData)
+})
 
 const targetTypeOptions = [
   { title: 'HTTP', value: 'http' },
@@ -149,20 +173,21 @@ watch(
   () => props.initialData,
   (newData) => {
     if (newData) {
+      console.log('TaskForm: 收到 initialData:', newData)
       formData.value = {
-        name: newData.name,
+        name: newData.name || '',
         description: newData.description || '',
-        schedule_expression: newData.schedule_expression,
-        timezone: newData.timezone,
-        target_type: newData.target_type as TargetType,
-        target_arn: newData.target_arn,
+        schedule_expression: newData.schedule_expression || '',
+        timezone: newData.timezone || 'Asia/Taipei',
+        target_type: (newData.target_type as TargetType) || 'http',
+        target_arn: newData.target_arn || '',
         target_input: newData.target_input || {},
-        max_retry_attempts: newData.max_retry_attempts,
+        max_retry_attempts: newData.max_retry_attempts || 3,
       }
       targetInputText.value = JSON.stringify(newData.target_input || {}, null, 2)
     }
   },
-  { immediate: true }
+  { immediate: true, deep: true }
 )
 
 // 監聽 target_input 文本變化
@@ -174,9 +199,39 @@ watch(targetInputText, (newValue) => {
   }
 })
 
+const openScheduleWizard = () => {
+  console.log('TaskForm: 點擊排程精靈，當前數據:', formData.value)
+  emit('open-schedule-wizard', { ...formData.value })
+}
+
+// 新增：直接設置排程表達式的方法
+const setScheduleExpression = (expression: string) => {
+  console.log('TaskForm: setScheduleExpression 被調用，表達式:', expression)
+  
+  // 直接設置表達式
+  formData.value.schedule_expression = expression
+  
+  // 強制觸發響應式更新
+  nextTick(() => {
+    console.log('TaskForm: 表達式設置完成，當前值:', formData.value.schedule_expression)
+    
+    // 如果需要，可以手動觸發輸入框的更新
+    if (scheduleExpressionRef.value) {
+      scheduleExpressionRef.value.focus()
+      scheduleExpressionRef.value.blur()
+    }
+  })
+}
+
+// 暴露方法給父組件
+defineExpose({
+  setScheduleExpression
+})
+
 const handleSubmit = async () => {
   const { valid } = await formRef.value.validate()
   if (valid) {
+    console.log('TaskForm: 提交數據:', formData.value)
     emit('submit', formData.value)
   }
 }

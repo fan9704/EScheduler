@@ -60,6 +60,18 @@
               </v-code>
             </div>
           </v-card-text>
+          <v-card-actions>
+            <v-btn
+              color="primary"
+              variant="outlined"
+              size="small"
+              block
+              @click.stop="useTemplate(template)"
+            >
+              <v-icon class="mr-2">mdi-check</v-icon>
+              使用此模板
+            </v-btn>
+          </v-card-actions>
         </v-card>
       </v-col>
     </v-row>
@@ -116,6 +128,14 @@ const filteredTemplates = computed(() => {
 
 const selectTemplate = (template: ScheduleTemplateResponse) => {
   selectedTemplate.value = template
+  console.log('TemplateSelector: 選擇模板:', template.name)
+}
+
+const useTemplate = (template: ScheduleTemplateResponse) => {
+  console.log('TemplateSelector: 使用模板表達式:', template.expression)
+  selectedTemplate.value = template
+  
+  // 發送選擇事件
   emit('select', template.expression)
 }
 

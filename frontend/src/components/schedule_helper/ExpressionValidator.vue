@@ -79,9 +79,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useScheduleHelperStore } from '@/stores/schedule_helper'
 import type { ScheduleValidationRequest } from '@/models/schedule_helper'
+
+const props = defineProps<{
+  initialExpression?: string
+}>()
 
 const emit = defineEmits<{
   validate: [request: ScheduleValidationRequest]
@@ -91,6 +95,18 @@ const scheduleHelperStore = useScheduleHelperStore()
 const { validationResult, loading } = scheduleHelperStore
 
 const expression = ref('')
+
+// 監聽初始表達式
+watch(
+  () => props.initialExpression,
+  (newExpression) => {
+    if (newExpression) {
+      expression.value = newExpression
+      validateExpression()
+    }
+  },
+  { immediate: true }
+)
 
 const rules = {
   required: (value: string) => !!value.trim() || '請輸入表達式',
