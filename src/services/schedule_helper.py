@@ -24,7 +24,7 @@ class ScheduleHelperService:
             "every_hour": {"expression": "rate(1 hour)", "description": "每小時執行"},
             "every_day": {"expression": "cron(0 0 * * *)", "description": "每天午夜執行"},
             "workdays_9am": {"expression": "cron(0 9 * * 1-5)", "description": "工作日早上9點執行"},
-            "weekend_backup": {"expression": "cron(0 2 * * 0)", "description": "週凌晨2點執行"},
+            "weekend_backup": {"expression": "cron(0 2 * * 0)", "description": "週日凌晨2點執行"},
             "monthly_report": {"expression": "cron(0 9 1 * *)", "description": "每月1號早上9點執行"}
         }
     
@@ -34,7 +34,6 @@ class ScheduleHelperService:
         
         # 生成描述
         unit_zh = {
-            "second": "秒", "seconds": "秒",
             "minute": "分鐘", "minutes": "分鐘",
             "hour": "小時", "hours": "小時",
             "day": "天", "days": "天"
@@ -152,24 +151,10 @@ class ScheduleHelperService:
                         error="時間間隔必須大於0"
                     )
                 
-                # 檢查秒級間隔的合理性
-                if unit.startswith('second') and value < 5:
-                    return ScheduleValidationResponse(
-                        valid=False,
-                        error="秒級間隔建議不少於5秒，避免過於頻繁的執行"
-                    )
-                
-                unit_zh = {
-                    "second": "秒", "seconds": "秒",
-                    "minute": "分鐘", "minutes": "分鐘",
-                    "hour": "小時", "hours": "小時",
-                    "day": "天", "days": "天"
-                }
-                
                 return ScheduleValidationResponse(
                     valid=True,
                     type=ScheduleType.RATE,
-                    description=f"每{value}{unit_zh.get(unit, unit)}執行一次",
+                    description=f"每{value}{unit}執行一次",
                     next_runs=self._calculate_next_runs_rate(value, unit)
                 )
             
@@ -188,10 +173,6 @@ class ScheduleHelperService:
     def get_schedule_templates(self) -> List[ScheduleTemplateResponse]:
         """獲取排程模板"""
         templates = [
-            # 高頻間隔
-            {"name": "每10秒", "expression": "rate(10 seconds)", "category": "高頻間隔", "description": "每10秒執行一次（測試用）"},
-            {"name": "每30秒", "expression": "rate(30 seconds)", "category": "高頻間隔", "description": "每30秒執行一次"},
-            
             # 常用間隔
             {"name": "每分鐘", "expression": "rate(1 minute)", "category": "常用間隔", "description": "每分鐘執行一次"},
             {"name": "每5分鐘", "expression": "rate(5 minutes)", "category": "常用間隔", "description": "每5分鐘執行一次"},
@@ -212,7 +193,7 @@ class ScheduleHelperService:
             
             # 週末排程
             {"name": "週六早上10點", "expression": "cron(0 10 * * 6)", "category": "週末排程", "description": "每週六早上10點執行"},
-            {"name": "週凌晨2點", "expression": "cron(0 2 * * 0)", "category": "週末排程", "description": "每週凌晨2點執行"},
+            {"name": "週日凌晨2點", "expression": "cron(0 2 * * 0)", "category": "週末排程", "description": "每週日凌晨2點執行"},
             
             # 每月排程
             {"name": "每月1號", "expression": "cron(0 0 1 * *)", "category": "每月排程", "description": "每月1號午夜執行"},
@@ -301,9 +282,7 @@ class ScheduleHelperService:
         now = datetime.now()
         next_runs = []
         
-        if unit.startswith('second'):
-            delta = timedelta(seconds=value)
-        elif unit.startswith('minute'):
+        if unit.startswith('minute'):
             delta = timedelta(minutes=value)
         elif unit.startswith('hour'):
             delta = timedelta(hours=value)

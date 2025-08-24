@@ -15,3 +15,5 @@ __pycache__
 *.crt
 *.conf
 *.pem
+
+frontend/node_modules
