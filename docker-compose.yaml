@@ -1,23 +1,23 @@
 services:
-  app:
-    build: .
-    image: "fan9704/backend"
-    container_name: "backend"
-    ports:
-      - "0.0.0.0:8000:8000"
-    env_file:
-      - .env
-    depends_on:
-      - postgres
-      - prometheus
-      - loki
-    networks:
-      - app_net
+  # app:
+  #   build: .
+  #   image: "fan9704/escheduler-backend"
+  #   container_name: "eschedulerbackend"
+  #   ports:
+  #     - "0.0.0.0:8000:8000"
+  #   env_file:
+  #     - .env
+  #   depends_on:
+  #     - postgres
+  #     - prometheus
+  #     - loki
+  #   networks:
+  #     - app_net
   postgres:
     image: "postgres:13"
-    container_name: "backend-postgresql"
+    container_name: "escheduler-postgresql"
     ports:
-      - "5432:5432"
+      - "0.0.0.0:5432:5432"
     env_file: .env
     networks:
       - app_net
@@ -26,7 +26,7 @@ services:
     restart: always
   pgadmin:
     image: "dpage/pgadmin4:latest"
-    container_name: backend-pgAdmin
+    container_name: escheduler-pgAdmin
     env_file: .env
     ports:
       - "9101:80"
@@ -39,7 +39,7 @@ services:
     restart: always
   prometheus:
     image: prom/prometheus
-    container_name: backend-prometheus
+    container_name: escheduler-prometheus
     hostname: prometheus
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
@@ -50,7 +50,7 @@ services:
       - monitor
   alertmanager:
     image: prom/alertmanager
-    container_name: backend-alertmanager
+    container_name: escheduler-alertmanager
     hostname: alertmanager
     restart: always
     ports:
@@ -60,7 +60,7 @@ services:
 
   grafana:
     image: grafana/grafana
-    container_name: backend-grafana
+    container_name: escheduler-grafana
     hostname: grafana
     ports:
       - "3001:3000"
@@ -72,7 +72,7 @@ services:
 
   loki:
     image: grafana/loki:latest
-    container_name: backend-loki
+    container_name: escheduler-loki
     ports:
       - "3100:3100"
     networks:

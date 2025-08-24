@@ -11,9 +11,9 @@ grafana_data/data
 __pycache__
 **/__pycache__
 
-media/**
-
 *.key
 *.crt
 *.conf
 *.pem
+
+frontend/node_modules

@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from tortoise.contrib.starlette import register_tortoise
+from tortoise import Tortoise
 
 from src.configs import tortoise_config, GENERATE_DB_SCHEMA, ALLOW_ORIGINS, SECRET_KEY
 from src.utils.api.router import TypedAPIRouter
@@ -18,8 +19,8 @@ def init(app: FastAPI):
     Init routers and etc.
     :return:
     """
+    # init_db(app)
     init_routers(app)
-    init_db(app)
     # 初始化 Middleware
     init_cors(app)
     init_middleware(app)
@@ -29,12 +30,8 @@ def init(app: FastAPI):
     app.mount("/media", StaticFiles(directory="media"), name="media")
 
 
-def init_db(app: FastAPI):
-    """
-    Init database models.
-    :param app:
-    :return:
-    """
+async def init_db(app: FastAPI):
+    """初始化資料庫模型"""
     config = {
         "use_tz": True,
         "timezone": "Asia/Taipei",
@@ -43,18 +40,18 @@ def init_db(app: FastAPI):
         },
         "apps": {
             "models": {
-                "models": ["src.models.tortoise"],
+                "models": [
+                    "src.models.tortoise.scheduler",
+                    "src.models.tortoise.team"
+                    ],
                 'default_connection': 'default',
             }
-
         }
     }
-    register_tortoise(
-        app,
-        config=config,
-        generate_schemas=GENERATE_DB_SCHEMA
+    await Tortoise.init(
+        config=config
     )
-
+    await Tortoise.generate_schemas()
 
 def init_routers(app: FastAPI):
     """
