@@ -150,26 +150,22 @@ class SchedulerEngine:
                 )
         
         elif schedule_expression.startswith('rate(') and schedule_expression.endswith(')'):
-            # Rate 表達式
+            # Rate 表達式 - 新增秒級支援
             rate_expr = schedule_expression[5:-1]
             import re
-            match = re.match(r'(\d+)\s+(minute|minutes|hour|hours|day|days)', rate_expr)
+            match = re.match(r'(\d+)\s+(second|seconds|minute|minutes|hour|hours|day|days)', rate_expr)
             if match:
                 value, unit = match.groups()
                 value = int(value)
                 
-                if unit.startswith('minute'):
+                if unit.startswith('second'):
+                    return IntervalTrigger(seconds=value)
+                elif unit.startswith('minute'):
                     return IntervalTrigger(minutes=value)
                 elif unit.startswith('hour'):
                     return IntervalTrigger(hours=value)
                 elif unit.startswith('day'):
                     return IntervalTrigger(days=value)
-        
-        elif schedule_expression.startswith('at(') and schedule_expression.endswith(')'):
-            # 指定時間
-            datetime_str = schedule_expression[3:-1]
-            run_date = datetime.fromisoformat(datetime_str)
-            return DateTrigger(run_date=run_date)
         
         raise ValueError(f"無法解析排程表達式: {schedule_expression}")
 

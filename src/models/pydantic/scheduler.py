@@ -16,8 +16,6 @@ class ScheduledTaskCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=255, description="任務名稱")
     description: Optional[str] = Field(None, description="任務描述")
     schedule_expression: str = Field(..., description="排程表達式")
-    schedule_type: Optional[ScheduleType] = Field(None, description="排程類型")
-    execute_at: Optional[datetime] = Field(None, description="指定執行時間 (用於一次性任務)")
     timezone: str = Field("Asia/Taipei", description="時區")
     target_type: TargetType = Field(..., description="目標類型")
     target_arn: str = Field(..., description="目標 ARN 或 URL")
@@ -27,41 +25,21 @@ class ScheduledTaskCreate(BaseModel):
     dead_letter_config: Optional[Dict[str, Any]] = Field(None, description="死信佇列配置")
     
     @validator('schedule_expression')
-    def validate_schedule_expression(cls, v, values):
+    def validate_schedule_expression(cls, v):
         """驗證排程表達式格式"""
-        schedule_type = values.get('schedule_type')
-        execute_at = values.get('execute_at')
-        
-        # 如果指定了執行時間，則為一次性任務
-        if execute_at:
-            return f"at({execute_at.isoformat()})"
-        
-        # 檢查表達式格式
         if v.startswith('cron(') and v.endswith(')'):
             return v
         elif v.startswith('rate(') and v.endswith(')'):
             return v
-        elif v.startswith('at(') and v.endswith(')'):
-            return v
-        elif v.startswith('once'):
-            return v
         else:
-            raise ValueError('排程表達式必須是 cron(expression)、rate(expression)、at(datetime) 或 once 格式')
-    
-    @validator('execute_at')
-    def validate_execute_at(cls, v):
-        """驗證執行時間"""
-        if v and v <= datetime.now():
-            raise ValueError('執行時間必須是未來時間')
-        return v
-
+            raise ValueError('排程表達式必須是 cron(expression) 或 rate(expression) 格式')
+        
 
 class ScheduledTaskUpdate(BaseModel):
     """更新排程任務請求模型"""
     name: Optional[str] = Field(None, min_length=1, max_length=255)
     description: Optional[str] = None
     schedule_expression: Optional[str] = None
-    execute_at: Optional[datetime] = None
     timezone: Optional[str] = None
     target_type: Optional[TargetType] = None
     target_arn: Optional[str] = None
@@ -74,7 +52,7 @@ class ScheduledTaskUpdate(BaseModel):
 
 class ScheduledTaskResponse(BaseModel):
     """排程任務回應模型"""
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True)  # Pydantic v2 配置
     
     id: int
     name: str
@@ -95,29 +73,9 @@ class ScheduledTaskResponse(BaseModel):
     updated_at: datetime
 
 
-# 新增：一次性任務創建模型
-class OneTimeTaskCreate(BaseModel):
-    """創建一次性任務請求模型"""
-    name: str = Field(..., min_length=1, max_length=255, description="任務名稱")
-    description: Optional[str] = Field(None, description="任務描述")
-    execute_at: datetime = Field(..., description="執行時間")
-    timezone: str = Field("Asia/Taipei", description="時區")
-    target_type: TargetType = Field(..., description="目標類型")
-    target_arn: str = Field(..., description="目標 ARN 或 URL")
-    target_input: Optional[Dict[str, Any]] = Field(None, description="目標輸入參數")
-    max_retry_attempts: int = Field(3, ge=0, le=10, description="最大重試次數")
-    
-    @validator('execute_at')
-    def validate_execute_at(cls, v):
-        """驗證執行時間必須是未來時間"""
-        if v <= datetime.now():
-            raise ValueError('執行時間必須是未來時間')
-        return v
-
-
 class TaskExecutionResponse(BaseModel):
     """任務執行記錄回應模型"""
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True)  # Pydantic v2 配置
     
     id: int
     task_id: int
@@ -138,7 +96,6 @@ class SchedulerStatsResponse(BaseModel):
     total_executions_today: int
     successful_executions_today: int
     failed_executions_today: int
-
 
 class TaskStateUpdateRequest(BaseModel):
     """任務狀態更新請求模型"""

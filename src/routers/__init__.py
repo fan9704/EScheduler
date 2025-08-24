@@ -1,12 +1,16 @@
-from src.routers.team import router as team_router
-from src.utils.api import TypedAPIRouter
-from src.routers.scheduler import router as scheduler_router
 from src.utils.api.router import TypedAPIRouter
+from . import team, scheduler, schedule_helper
 
-# teams_router = TypedAPIRouter(router=team_router, prefix="/api/team", tags=["team"])
 
-scheduler_api_router = TypedAPIRouter(
-    router=scheduler_router, 
-    prefix="/api/scheduler", 
-    tags=["scheduler"]
+scheduler_router = TypedAPIRouter(
+    router=scheduler.router,
+    prefix="/api/scheduler",
+    tags=["Scheduler"]
+)
+
+# 新增排程輔助路由器
+schedule_helper_router = TypedAPIRouter(
+    router=schedule_helper.router,
+    prefix="/api/schedule-helper",
+    tags=["Schedule Helper"]
 )
