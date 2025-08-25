@@ -57,6 +57,24 @@ export const useSchedulerStore = defineStore('scheduler', () => {
     }
   }
 
+  // 🔥 新增：getTask 方法（直接返回任務數據）
+  const getTask = async (id: number): Promise<ScheduledTaskResponse> => {
+    try {
+      loading.value = true
+      error.value = null
+      const task = await schedulerService.getTask(id)
+      currentTask.value = task
+      return task
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : '獲取任務詳情失敗'
+      error.value = errorMessage
+      console.error('Failed to get task:', err)
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   const createTask = async (taskData: ScheduledTaskCreate) => {
     try {
       loading.value = true
@@ -73,22 +91,23 @@ export const useSchedulerStore = defineStore('scheduler', () => {
     }
   }
 
-  const updateTask = async (id: number, taskData: ScheduledTaskUpdate) => {
+  const updateTask = async (taskId: number, taskData: ScheduledTaskCreate) => {
     try {
       loading.value = true
       error.value = null
-      const updatedTask = await schedulerService.updateTask(id, taskData)
-      const index = tasks.value.findIndex(task => task.id === id)
+      
+      const response = await schedulerService.updateTask(taskId, taskData)
+      
+      // 更新任務列表中的對應項目
+      const index = tasks.value.findIndex(task => task.id === taskId)
       if (index !== -1) {
-        tasks.value[index] = updatedTask
+        tasks.value[index] = response
       }
-      if (currentTask.value?.id === id) {
-        currentTask.value = updatedTask
-      }
-      return updatedTask
+      
+      return response
     } catch (err) {
-      error.value = err instanceof Error ? err.message : '更新任務失敗'
-      console.error('Failed to update task:', err)
+      const errorMessage = err instanceof Error ? err.message : '更新任務失敗'
+      error.value = errorMessage
       throw err
     } finally {
       loading.value = false
@@ -101,9 +120,6 @@ export const useSchedulerStore = defineStore('scheduler', () => {
       error.value = null
       await schedulerService.deleteTask(id)
       tasks.value = tasks.value.filter(task => task.id !== id)
-      if (currentTask.value?.id === id) {
-        currentTask.value = null
-      }
     } catch (err) {
       error.value = err instanceof Error ? err.message : '刪除任務失敗'
       console.error('Failed to delete task:', err)
@@ -117,14 +133,15 @@ export const useSchedulerStore = defineStore('scheduler', () => {
     try {
       loading.value = true
       error.value = null
-      await schedulerService.updateTaskState(id, stateData)
-      const task = tasks.value.find(t => t.id === id)
-      if (task) {
-        task.state = stateData.state
+      const updatedTask = await schedulerService.updateTaskState(id, stateData)
+      
+      // 更新任務列表中的對應項目
+      const index = tasks.value.findIndex(task => task.id === id)
+      if (index !== -1) {
+        tasks.value[index] = updatedTask
       }
-      if (currentTask.value?.id === id) {
-        currentTask.value.state = stateData.state
-      }
+      
+      return updatedTask
     } catch (err) {
       error.value = err instanceof Error ? err.message : '更新任務狀態失敗'
       console.error('Failed to update task state:', err)
@@ -192,6 +209,7 @@ export const useSchedulerStore = defineStore('scheduler', () => {
     // Actions
     fetchTasks,
     fetchTask,
+    getTask, // 🔥 新增：暴露 getTask 方法
     createTask,
     updateTask,
     deleteTask,

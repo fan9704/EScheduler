@@ -57,14 +57,14 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { RateExpressionRequest, TimeUnit } from '@/models/schedule_helper'
+import { RateExpressionRequest, TimeUnit } from '@/models/schedule_helper'
 
 const emit = defineEmits<{
   generate: [request: RateExpressionRequest]
 }>()
 
 const rateValue = ref(5)
-const rateUnit = ref<TimeUnit>('minutes')
+const rateUnit = ref<TimeUnit>(TimeUnit.MINUTES)
 
 const unitOptions = [
   { title: '秒', value: 'seconds' },

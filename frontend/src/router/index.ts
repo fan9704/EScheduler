@@ -39,12 +39,10 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/tasks/:id/edit',
     name: 'TaskEdit',
-    component: TaskEdit,
+    component: () => import('@/views/TaskEdit.vue'),
     meta: {
-      title: '編輯任務',
-      icon: 'mdi-pencil',
-    },
-    props: true,
+      title: '編輯任務'
+    }
   },
   {
     path: '/schedule-helper',
