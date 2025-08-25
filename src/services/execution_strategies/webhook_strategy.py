@@ -30,6 +30,7 @@ class WebhookExecutionStrategy(ExecutionStrategy):
             method = target_input.get('method', 'POST').upper()
             headers = target_input.get('headers', {})
             body = target_input.get('body', {})
+            secret = target_input.get('secret')
 
             # 設置 Webhook 專用 headers
             webhook_headers = {
@@ -59,11 +60,11 @@ class WebhookExecutionStrategy(ExecutionStrategy):
                     method=method,
                     url=target_arn,
                     headers=webhook_headers,
-                    json=payload
+                    json=body
                 ) as response:
                     response_text = await response.text()
                     execution_time = asyncio.get_event_loop().time() - start_time
-                    
+                    print(response.status, response_text)
                     success = 200 <= response.status < 300
                     
                     return ExecutionResult(
@@ -72,7 +73,7 @@ class WebhookExecutionStrategy(ExecutionStrategy):
                         data={
                             'method': method,
                             'url': str(response.url),
-                            'payload': payload,
+                            'body': body,
                             'has_signature': bool(secret),
                             'response_body': response_text,
                             'response_headers': dict(response.headers)

@@ -1,6 +1,7 @@
 from typing import Dict, Type, List
 from . import ExecutionStrategy
 from .http_strategy import HttpExecutionStrategy
+from .webhook_strategy import WebhookExecutionStrategy
 
 
 class ExecutionStrategyFactory:
@@ -8,7 +9,7 @@ class ExecutionStrategyFactory:
     
     _strategies: Dict[str, Type[ExecutionStrategy]] = {
         'http': HttpExecutionStrategy,
-        'webhook': HttpExecutionStrategy,  # 暫時使用 HTTP 策略
+        'webhook': WebhookExecutionStrategy,
     }
     
     @classmethod
