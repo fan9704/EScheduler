@@ -30,7 +30,7 @@ class ScheduleHelperService:
     
     def generate_rate_expression(self, request: RateExpressionRequest) -> ScheduleExpressionResponse:
         """生成 Rate 表達式"""
-        expression = f"rate({request.value} {request.unit})"
+        expression = f"rate({request.value} {request.unit.value})"
         
         # 生成描述
         unit_zh = {
