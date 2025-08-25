@@ -3,6 +3,7 @@ import re
 from typing import List, Dict, Any
 from datetime import datetime, timedelta
 from croniter import croniter
+from zoneinfo import ZoneInfo
 
 from src.models.pydantic.schedule_helper import (
     ScheduleType, TimeUnit, CronField,
@@ -10,6 +11,7 @@ from src.models.pydantic.schedule_helper import (
     ScheduleExpressionResponse, ScheduleValidationRequest, ScheduleValidationResponse,
     ScheduleTemplateResponse, CronHelpResponse
 )
+from src.configs import TZ
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +29,7 @@ class ScheduleHelperService:
             "weekend_backup": {"expression": "cron(0 2 * * 0)", "description": "週日凌晨2點執行"},
             "monthly_report": {"expression": "cron(0 9 1 * *)", "description": "每月1號早上9點執行"}
         }
+        self.tz = ZoneInfo(TZ)
     
     def generate_rate_expression(self, request: RateExpressionRequest) -> ScheduleExpressionResponse:
         """生成 Rate 表達式"""
@@ -123,7 +126,7 @@ class ScheduleHelperService:
                     )
                 
                 # 測試 croniter
-                croniter(cron_expr, datetime.now())
+                croniter(cron_expr, datetime.now(self.tz))
                 
                 return ScheduleValidationResponse(
                     valid=True,
@@ -280,7 +283,7 @@ class ScheduleHelperService:
     
     def _calculate_next_runs_rate(self, value: int, unit: str, count: int = 5) -> List[str]:
         """計算 Rate 表達式的接下來執行時間"""
-        now = datetime.now()
+        now = datetime.now(tz=self.tz)
         next_runs = []
         if unit.startswith('second'):
             delta = timedelta(seconds=value)
@@ -304,7 +307,7 @@ class ScheduleHelperService:
         """計算 Cron 表達式的接下來執行時間"""
         try:
             cron_expr = expression[5:-1]  # 移除 'cron(' 和 ')'
-            cron = croniter(cron_expr, datetime.now())
+            cron = croniter(cron_expr, datetime.now(self.tz))
             
             next_runs = []
             for _ in range(count):
