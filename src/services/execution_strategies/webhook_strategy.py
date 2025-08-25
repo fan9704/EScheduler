@@ -29,9 +29,8 @@ class WebhookExecutionStrategy(ExecutionStrategy):
             # Webhook 通常使用 POST 方法
             method = target_input.get('method', 'POST').upper()
             headers = target_input.get('headers', {})
-            payload = target_input.get('payload', {})
-            secret = target_input.get('secret')  # Webhook 簽名密鑰
-            
+            body = target_input.get('body', {})
+
             # 設置 Webhook 專用 headers
             webhook_headers = {
                 'User-Agent': 'EScheduler-Webhook/1.0',
@@ -43,7 +42,7 @@ class WebhookExecutionStrategy(ExecutionStrategy):
             if secret:
                 import hmac
                 import hashlib
-                payload_str = json.dumps(payload, sort_keys=True)
+                payload_str = json.dumps(body, sort_keys=True)
                 signature = hmac.new(
                     secret.encode('utf-8'),
                     payload_str.encode('utf-8'),
@@ -54,7 +53,7 @@ class WebhookExecutionStrategy(ExecutionStrategy):
             webhook_headers.update(headers)
             
             logger.info(f"執行 Webhook 調用: {target_arn}")
-            
+
             async with aiohttp.ClientSession(timeout=self.timeout) as session:
                 async with session.request(
                     method=method,

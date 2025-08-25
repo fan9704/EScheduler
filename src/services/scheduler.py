@@ -305,14 +305,15 @@ class SchedulerService:
             
             elif schedule_expression.startswith('rate(') and schedule_expression.endswith(')'):
                 rate_expr = schedule_expression[5:-1]
-                match = re.match(r'(\d+)\s+(minute|minutes|hour|hours|day|days)', rate_expr)
+                match = re.match(r'(\d+)\s+(second|seconds|minute|minutes|hour|hours|day|days)', rate_expr)
                 if not match:
                     raise ValueError("無效的 rate 表達式格式")
                 
                 value, unit = match.groups()
                 value = int(value)
-                
-                if unit.startswith('minute'):
+                if unit.startswith('second'):
+                    delta = timedelta(seconds=value)
+                elif unit.startswith('minute'):
                     delta = timedelta(minutes=value)
                 elif unit.startswith('hour'):
                     delta = timedelta(hours=value)
