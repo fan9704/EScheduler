@@ -38,7 +38,6 @@
           <v-col cols="12">
             <div class="d-flex gap-2">
               <v-text-field
-                ref="scheduleExpressionRef"
                 v-model="formData.schedule_expression"
                 label="排程表達式"
                 variant="outlined"
@@ -139,7 +138,6 @@ const emit = defineEmits<{
 }>()
 
 const formRef = ref()
-const scheduleExpressionRef = ref()
 const targetInputText = ref('')
 
 const formData = ref({
@@ -172,19 +170,22 @@ const rules = {
 watch(
   () => props.initialData,
   (newData) => {
+    console.log('TaskForm 收到新的 initialData:', newData)
     if (newData) {
-      console.log('TaskForm: 收到 initialData:', newData)
-      formData.value = {
-        name: newData.name || '',
-        description: newData.description || '',
-        schedule_expression: newData.schedule_expression || '',
-        timezone: newData.timezone || 'Asia/Taipei',
-        target_type: (newData.target_type as TargetType) || 'http',
-        target_arn: newData.target_arn || '',
-        target_input: newData.target_input || {},
-        max_retry_attempts: newData.max_retry_attempts || 3,
-      }
-      targetInputText.value = JSON.stringify(newData.target_input || {}, null, 2)
+      nextTick(() => {
+        formData.value = {
+          name: newData.name || '',
+          description: newData.description || '',
+          schedule_expression: newData.schedule_expression || '',
+          timezone: newData.timezone || 'Asia/Taipei',
+          target_type: (newData.target_type as TargetType) || 'http',
+          target_arn: newData.target_arn || '',
+          target_input: newData.target_input || {},
+          max_retry_attempts: newData.max_retry_attempts || 3,
+        }
+        targetInputText.value = JSON.stringify(newData.target_input || {}, null, 2)
+        console.log('TaskForm 更新後的 formData:', formData.value)
+      })
     }
   },
   { immediate: true, deep: true }
@@ -200,39 +201,31 @@ watch(targetInputText, (newValue) => {
 })
 
 const openScheduleWizard = () => {
-  console.log('TaskForm: 點擊排程精靈，當前數據:', formData.value)
+  console.log('TaskForm 點擊排程精靈按鈕，當前數據:', formData.value)
   emit('open-schedule-wizard', { ...formData.value })
 }
-
-// 新增：直接設置排程表達式的方法
-const setScheduleExpression = (expression: string) => {
-  console.log('TaskForm: setScheduleExpression 被調用，表達式:', expression)
-  
-  // 直接設置表達式
-  formData.value.schedule_expression = expression
-  
-  // 強制觸發響應式更新
-  nextTick(() => {
-    console.log('TaskForm: 表達式設置完成，當前值:', formData.value.schedule_expression)
-    
-    // 如果需要，可以手動觸發輸入框的更新
-    if (scheduleExpressionRef.value) {
-      scheduleExpressionRef.value.focus()
-      scheduleExpressionRef.value.blur()
-    }
-  })
-}
-
-// 暴露方法給父組件
-defineExpose({
-  setScheduleExpression
-})
 
 const handleSubmit = async () => {
   const { valid } = await formRef.value.validate()
   if (valid) {
-    console.log('TaskForm: 提交數據:', formData.value)
+    console.log('TaskForm 提交數據:', formData.value)
     emit('submit', formData.value)
   }
 }
+
+// 🔥 新增：設置排程表達式的方法
+const setScheduleExpression = (expression: string) => {
+  console.log('TaskForm.setScheduleExpression 被調用，表達式:', expression)
+  formData.value.schedule_expression = expression
+  
+  // 使用 nextTick 確保 DOM 更新
+  nextTick(() => {
+    console.log('TaskForm.setScheduleExpression 完成，當前 formData:', formData.value)
+  })
+}
+
+// 🔥 暴露方法給父組件
+defineExpose({
+  setScheduleExpression
+})
 </script>
