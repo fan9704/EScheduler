@@ -34,6 +34,7 @@ class ScheduleHelperService:
         
         # 生成描述
         unit_zh = {
+            "second": "秒鐘", "seconds": "秒鐘",
             "minute": "分鐘", "minutes": "分鐘",
             "hour": "小時", "hours": "小時",
             "day": "天", "days": "天"
@@ -281,8 +282,9 @@ class ScheduleHelperService:
         """計算 Rate 表達式的接下來執行時間"""
         now = datetime.now()
         next_runs = []
-        
-        if unit.startswith('minute'):
+        if unit.startswith('second'):
+            delta = timedelta(seconds=value)
+        elif unit.startswith('minute'):
             delta = timedelta(minutes=value)
         elif unit.startswith('hour'):
             delta = timedelta(hours=value)
