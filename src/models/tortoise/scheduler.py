@@ -1,6 +1,5 @@
 from tortoise import fields, models
-from datetime import datetime
-from src.models.enum.scheduler import TaskState, TargetType, ExecutionStatus, ScheduleType
+from src.models.enum.scheduler import TaskState, TargetType, ExecutionStatus
 
 
 class ScheduledTask(models.Model):

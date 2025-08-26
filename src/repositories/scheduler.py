@@ -19,11 +19,6 @@ class ScheduledTaskRepository(Repository):
         """根據狀態獲取任務"""
         return await self.model.filter(state=state)
 
-    def _get_timezone_aware_now(self, timezone: str = "Asia/Taipei") -> datetime:
-        """獲取帶時區的當前時間"""
-        tz = ZoneInfo(timezone)
-        return datetime.now(tz)
-
     async def update_execution_time(self, task_id: int, last_execution: datetime, next_execution: datetime = None):
         """更新任務執行時間"""
         update_data = {

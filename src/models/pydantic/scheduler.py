@@ -1,10 +1,11 @@
-from typing import Optional, Dict, Any, List
 from datetime import datetime
+from typing import Optional, Dict, Any
+
 from pydantic import BaseModel, Field, validator, ConfigDict
 from tortoise.contrib.pydantic import pydantic_model_creator
-from src.models.tortoise.scheduler import ScheduledTask, TaskExecution
-from src.models.enum.scheduler import TaskState, TargetType, ExecutionStatus, ScheduleType
 
+from src.models.enum.scheduler import TaskState, TargetType, ExecutionStatus
+from src.models.tortoise.scheduler import ScheduledTask, TaskExecution
 
 # Tortoise Pydantic 模型
 ScheduledTaskPydantic = pydantic_model_creator(ScheduledTask)
@@ -100,3 +101,21 @@ class SchedulerStatsResponse(BaseModel):
 class TaskStateUpdateRequest(BaseModel):
     """任務狀態更新請求模型"""
     state: TaskState = Field(..., description="新的任務狀態")
+
+class SchedulerJob(BaseModel):
+    id: int
+    name: Optional[str]
+    target_type: Optional[str]
+    target_arn: Optional[str]
+    target_input: Optional[Dict[str, Any]] = Field(default={})
+
+class InternalSchedulerJob(BaseModel):
+    id: int
+    name: str
+    next_run_time: Optional[datetime]
+    trigger: str
+
+class InternalJobStatusResponse(BaseModel):
+    exists: bool
+    next_run_time: Optional[str] = None
+    trigger: Optional[str] = None
