@@ -1,11 +1,10 @@
-import { StatisticDashboardMetricResponse } from "@/models/statistic";
-import { apiService } from "./api";
+import {StatisticDashboardMetricResponse} from "@/models/statistic";
+import {apiService} from "./api";
 
 class StatisticService{
     private readonly basePath = '/statistic'
     async get_dashboard_statistic(): Promise<StatisticDashboardMetricResponse>{
-        const response = await apiService.get<StatisticDashboardMetricResponse>(`${this.basePath}/dashboard-metrics`)
-        return response
+        return await apiService.get<StatisticDashboardMetricResponse>(`${this.basePath}/dashboard-metrics`)
     }
 }
     

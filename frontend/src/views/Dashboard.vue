@@ -71,7 +71,7 @@
             </v-icon>
             <div>
               <div class="text-h5 font-weight-bold">
-                {{ dashboard_metrics.total_executions_today || 0 }}
+                {{ dashboard_metrics.today_executions_count || 0 }}
               </div>
               <div class="text-caption text-medium-emphasis">
                 今日執行
@@ -176,12 +176,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useSchedulerStore } from '@/stores/scheduler'
-import { TaskState } from '@/models/scheduler'
+import {computed, onMounted, ref} from 'vue'
+import {useSchedulerStore} from '@/stores/scheduler'
+import {TaskState} from '@/models/scheduler'
 import dayjs from 'dayjs'
-import { statisticService} from '@/services/statistic'
-import { StatisticDashboardMetricResponse } from '@/models/statistic'
+import {statisticService} from '@/services/statistic'
+import {StatisticDashboardMetricResponse} from '@/models/statistic'
 
 const schedulerStore = useSchedulerStore()
 
@@ -190,7 +190,7 @@ const dashboard_metrics = ref<StatisticDashboardMetricResponse>({
   total_tasks: 0,
   enabled_tasks: 0,
   disabled_tasks: 0,
-  total_executions_today: 0
+  today_executions_count: 0
 })
 const recentTasks = computed(() => 
   tasks.slice(0, 5).sort((a, b) => 
@@ -226,8 +226,7 @@ const getStateIcon = (state: string) => {
 
 const get_statistic_dashboard_metrics = async () => {
   try {
-    const response = await statisticService.get_dashboard_statistic()
-    dashboard_metrics.value = response
+    dashboard_metrics.value = await statisticService.get_dashboard_statistic()
   } catch (error) {
     console.error('Error fetching dashboard metrics:', error)
   }
