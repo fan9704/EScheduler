@@ -47,6 +47,14 @@ class ScheduledTaskRepository(Repository):
     async def search_tasks(self, keyword: str) -> List[ScheduledTask]:
         """搜索任務"""
         return await self.model.filter(name__icontains=keyword)
+    
+    # Statistic methods
+    async def count_tasks_by_state(self, state: TaskState) -> int:
+        """統計特定狀態的任務數量"""
+        return await self.model.filter(state=state).count()
+    async def count_all_tasks(self) -> int:
+        """統計所有任務數量"""
+        return await self.model.all().count()
 
 
 class TaskExecutionRepository(Repository):
@@ -93,3 +101,14 @@ class TaskExecutionRepository(Repository):
             update_data["error_message"] = error_message
             
         await self.model.filter(id=execution_id).update(**update_data)
+
+    async def count_today_executions(self) -> int:
+        """統計今天的執行次數"""
+        now = self._get_timezone_aware_now()
+        start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_of_day = now.replace(hour=23, minute=59, second=59, microsecond=999999)
+        
+        return await self.model.filter(
+            started_at__gte=start_of_day,
+            started_at__lte=end_of_day
+        ).count()
