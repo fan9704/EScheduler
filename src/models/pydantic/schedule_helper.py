@@ -1,6 +1,7 @@
-from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, Field, ConfigDict  # 添加 ConfigDict 導入
 from enum import Enum
+from typing import List, Optional, Dict
+
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class ScheduleType(str, Enum):

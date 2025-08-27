@@ -1,17 +1,18 @@
-from datetime import datetime
-from zoneinfo import ZoneInfo
+import threading
+from typing import Optional, List
+
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
-from typing import Dict, Any, Optional, List
-import re
-import threading
 
+from src.dependencies.repositories import get_scheduled_task_repository, get_task_execution_repository
+from src.models.enum import TaskState
+from src.models.enum.scheduler import ExecutionStatus
+from src.models.pydantic.scheduler import SchedulerJob, InternalSchedulerJob, InternalJobStatusResponse
 from src.repositories.scheduler import ScheduledTaskRepository, TaskExecutionRepository
 from src.services.execution_strategies.strategy_factory import ExecutionStrategyFactory
-from src.models.enum.scheduler import ExecutionStatus
 from src.utils.logger import logger
-from src.dependencies.repositories import get_scheduled_task_repository, get_task_execution_repository
+from src.utils.schedule import get_timezone_aware_now, match_rate_expression
 
 
 class SchedulerEngine:
@@ -49,10 +50,6 @@ class SchedulerEngine:
         """獲取單例實例"""
         return cls()
 
-    def _get_timezone_aware_now(self, timezone: str = "Asia/Taipei") -> datetime:
-        """獲取帶時區的當前時間"""
-        tz = ZoneInfo(timezone)
-        return datetime.now(tz)
 
     async def start(self):
         """啟動排程引擎"""
@@ -79,20 +76,21 @@ class SchedulerEngine:
         """載入現有的啟用任務到排程引擎"""
         try:
             logger.info("開始載入既有工作")
-            enabled_tasks = await self.task_repository.get_tasks_by_state("ENABLED")
+            enabled_tasks = await self.task_repository.get_tasks_by_state(TaskState.ENABLED)
             for task in enabled_tasks:
-                await self.add_job(task.id, task.schedule_expression, {
-                    'id': task.id,
-                    'name': task.name,
-                    'target_type': task.target_type,
-                    'target_arn': task.target_arn,
-                    'target_input': task.target_input
-                })
+
+                await self.add_job(task.id, task.schedule_expression,SchedulerJob(
+                    id=task.id,
+                    name=task.name,
+                    target_type=task.target_type,
+                    target_arn=task.target_arn,
+                    target_input=task.target_input
+                ))
             logger.info(f"已載入 {len(enabled_tasks)} 個啟用任務")
         except Exception as e:
             logger.error(f"載入現有任務失敗: {e}")
 
-    async def add_job(self, task_id: int, schedule_expression: str, task_data: Dict[str, Any]):
+    async def add_job(self, task_id: int, schedule_expression: str, task_data: SchedulerJob):
         """添加任務到排程引擎"""
         try:
             job_id = f"task_{task_id}"
@@ -131,48 +129,50 @@ class SchedulerEngine:
         except Exception as e:
             logger.error(f"移除任務 {task_id} 失敗: {e}")
 
-    def get_job_status(self, task_id: int) -> Dict[str, Any]:
+    def get_job_status(self, task_id: int) -> InternalJobStatusResponse:
         """獲取任務狀態"""
         job_id = f"task_{task_id}"
         job = self.scheduler.get_job(job_id)
         
         if job:
-            return {
-                'exists': True,
-                'next_run_time': job.next_run_time.isoformat() if job.next_run_time else None,
-                'trigger': str(job.trigger)
-            }
+            return InternalJobStatusResponse(
+                exists=True,
+                next_run_time=job.next_run_time.isoformat() if job.next_run_time else None,
+                trigger=str(job.trigger)
+            )
         else:
-            return {'exists': False}
+            return InternalJobStatusResponse(
+                exists=False,
+                next_run_time=None,
+                trigger=None
+            )
 
-    def get_all_jobs(self) -> List[Dict[str, Any]]:
+    def get_all_jobs(self) -> List[InternalSchedulerJob]:
         """獲取所有任務狀態"""
         jobs = self.scheduler.get_jobs()
         return [
-            {
-                'id': job.id,
-                'name': job.name,
-                'next_run_time': job.next_run_time.isoformat() if job.next_run_time else None,
-                'trigger': str(job.trigger)
-            }
+            InternalSchedulerJob(
+                id=job.id,
+                name=job.name,
+                next_run_time=job.next_run_time,
+                trigger=str(job.trigger)
+            )
             for job in jobs
         ]
 
-    async def _execute_task(self, task_data: Dict[str, Any]):
+    async def _execute_task(self, task_data: SchedulerJob):
         """執行任務"""
-        task_id = task_data['id']
-        task_name = task_data['name']
         
         # 創建執行記錄 - 使用帶時區的時間
         execution_id = None
-        start_time = self._get_timezone_aware_now()
+        start_time = get_timezone_aware_now()
         
         try:
-            logger.info(f"自動執行任務: {task_name} (ID: {task_id})")
+            logger.info(f"自動執行任務: {task_data.name} (ID: {task_data.id})")
             
             # 創建 TaskExecution 記錄
             execution_record = await self.execution_repository.create(
-                task_id=task_id,
+                task_id=task_data.id,
                 status=ExecutionStatus.RUNNING,
                 started_at=start_time,
                 attempt_number=1
@@ -180,24 +180,24 @@ class SchedulerEngine:
             execution_id = execution_record.id
             
             # 創建執行策略
-            strategy = self.strategy_factory.create_strategy(task_data['target_type'])
+            strategy = self.strategy_factory.create_strategy(task_data.target_type)
             
             # 執行任務
             result = await strategy.execute(
-                task_data['target_arn'], 
-                task_data.get('target_input', {})
+                task_data.target_arn,
+                task_data.target_input
             )
             
             # 更新執行記錄
-            await self._update_execution_record(task_id, result, execution_id)
+            await self._update_execution_record(task_data.id, result, execution_id)
             
             if result.success:
-                logger.info(f"任務 {task_name} 自動執行成功")
+                logger.info(f"任務 {task_data.name} 自動執行成功")
             else:
-                logger.error(f"任務 {task_name} 自動執行失敗: {result.message}")
+                logger.error(f"任務 {task_data.name} 自動執行失敗: {result.message}")
                 
         except Exception as e:
-            logger.error(f"任務 {task_id} 執行異常: {e}")
+            logger.error(f"任務 {task_data.id} 執行異常: {e}")
             
             # 更新執行記錄為失敗狀態
             if execution_id:
@@ -214,7 +214,7 @@ class SchedulerEngine:
             await self.task_repository.increment_execution_count(task_id)
             
             # 更新最後執行時間 - 使用帶時區的時間
-            current_time = self._get_timezone_aware_now()
+            current_time = get_timezone_aware_now()
             await self.task_repository.update_execution_time(task_id, current_time)
             
             # 更新 TaskExecution 記錄
@@ -231,7 +231,8 @@ class SchedulerEngine:
         except Exception as e:
             logger.error(f"更新執行記錄失敗: {e}")
 
-    def _parse_schedule_expression(self, expression: str):
+    @staticmethod
+    def _parse_schedule_expression(expression: str):
         """解析排程表達式"""
         if expression.startswith('cron(') and expression.endswith(')'):
             cron_expr = expression[5:-1]
@@ -239,10 +240,8 @@ class SchedulerEngine:
         
         elif expression.startswith('rate(') and expression.endswith(')'):
             rate_expr = expression[5:-1]
-            match = re.match(r'(\d+)\s+(second|seconds|minute|minutes|hour|hours|day|days)', rate_expr)
-            if not match:
-                raise ValueError("無效的 rate 表達式格式")
-            
+            match = match_rate_expression(rate_expr)
+
             value, unit = match.groups()
             value = int(value)
             
