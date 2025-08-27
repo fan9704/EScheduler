@@ -1,4 +1,6 @@
 from typing import Dict, Type, List
+
+from src.services.execution_strategies.rabbitmq_strategy import RabbitMQExecutionStrategy
 from . import ExecutionStrategy
 from .http_strategy import HttpExecutionStrategy
 from .webhook_strategy import WebhookExecutionStrategy
@@ -10,6 +12,7 @@ class ExecutionStrategyFactory:
     _strategies: Dict[str, Type[ExecutionStrategy]] = {
         'http': HttpExecutionStrategy,
         'webhook': WebhookExecutionStrategy,
+        'rabbitmq': RabbitMQExecutionStrategy,
     }
     
     @classmethod
