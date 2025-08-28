@@ -77,6 +77,15 @@ services:
       - "3100:3100"
     networks:
       - monitor
+  rabbitmq:
+    image: rabbitmq:3.9.10-management
+    hostname: rabbitmq
+    container_name: escheduler-rabbitmq
+    env_file: .env
+    restart: always
+    ports:
+      - "5672:5672" # AMQP protocol
+      - "15672:15672" # Management UI
 
 networks:
     monitor:

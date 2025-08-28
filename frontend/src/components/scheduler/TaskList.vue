@@ -67,13 +67,14 @@
         class="elevation-0"
       >
         <template #item.state="{ item }">
-          <v-chip
-            :color="getStateColor(item.state)"
-            size="small"
-            variant="flat"
-          >
-            {{ getStateText(item.state) }}
-          </v-chip>
+            <v-switch
+              v-model="item.state"
+              color="success"
+              :label="getStateTextComputed(item.state)"
+              false-value="DISABLED"
+              true-value="ENABLED"
+              @change="updateTaskState(item.id, item.state)"
+            ></v-switch>
         </template>
         
         <template #item.target_type="{ item }">
@@ -122,11 +123,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useSchedulerStore } from '@/stores/scheduler'
-import { TaskState } from '@/models/scheduler'
+import { ScheduledTaskResponse, TaskState, TaskStateUpdateRequest } from '@/models/scheduler'
 import dayjs from 'dayjs'
+import { id } from 'vuetify/locale'
 
 const router = useRouter()
 const schedulerStore = useSchedulerStore()
@@ -135,7 +137,8 @@ const searchKeyword = ref('')
 const statusFilter = ref('')
 const typeFilter = ref('')
 
-const { tasks, loading } = schedulerStore
+const { loading } = schedulerStore
+let tasks = ref<ScheduledTaskResponse[]>([])
 
 const headers = [
   { title: '任務名稱', key: 'name', sortable: true },
@@ -160,8 +163,11 @@ const typeOptions = [
   { title: 'Email', value: 'email' },
 ]
 
+watch(() => schedulerStore.tasks, (newTasks) => {
+  tasks.value = newTasks
+}, { immediate: true })
 const filteredTasks = computed(() => {
-  let result = tasks
+  let result = schedulerStore.tasks
   
   if (searchKeyword.value) {
     result = result.filter(task => 
@@ -206,6 +212,20 @@ const getStateText = (state: string) => {
       return state
   }
 }
+const getStateTextComputed = computed(() => {
+  return (state: String) => {
+    switch (state) {
+      case TaskState.ENABLED:
+        return '啟用'
+      case TaskState.DISABLED:
+        return '禁用'
+      case TaskState.PAUSED:
+        return '暫停'
+      default:
+        return "禁用"
+    }
+  }
+})
 
 const formatDateTime = (dateTime: string) => {
   return dayjs(dateTime).format('YYYY-MM-DD HH:mm:ss')
@@ -220,6 +240,18 @@ const searchTasks = async () => {
     await schedulerStore.searchTasks(searchKeyword.value.trim())
   } else {
     await schedulerStore.fetchTasks()
+  }
+}
+
+const updateTaskState = async (id:number, state: TaskState) => {
+  try {
+    let updateStateRequest:TaskStateUpdateRequest = {
+      state: state
+    }
+    await schedulerStore.updateTaskState(id, updateStateRequest)
+    // 顯示成功消息
+  } catch (error) {
+    // 顯示錯誤消息
   }
 }
 
@@ -249,6 +281,6 @@ const deleteTask = async (id: number) => {
 }
 
 onMounted(() => {
-  schedulerStore.fetchTasks()
+  schedulerStore.fetchTasks();
 })
 </script>
