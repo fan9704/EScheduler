@@ -73,6 +73,7 @@
               :label="getStateTextComputed(item.state)"
               false-value="DISABLED"
               true-value="ENABLED"
+              @change="updateTaskState(item.id, item.state)"
             ></v-switch>
         </template>
         
@@ -125,8 +126,9 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useSchedulerStore } from '@/stores/scheduler'
-import { ScheduledTaskResponse, TaskState } from '@/models/scheduler'
+import { ScheduledTaskResponse, TaskState, TaskStateUpdateRequest } from '@/models/scheduler'
 import dayjs from 'dayjs'
+import { id } from 'vuetify/locale'
 
 const router = useRouter()
 const schedulerStore = useSchedulerStore()
@@ -238,6 +240,18 @@ const searchTasks = async () => {
     await schedulerStore.searchTasks(searchKeyword.value.trim())
   } else {
     await schedulerStore.fetchTasks()
+  }
+}
+
+const updateTaskState = async (id:number, state: TaskState) => {
+  try {
+    let updateStateRequest:TaskStateUpdateRequest = {
+      state: state
+    }
+    await schedulerStore.updateTaskState(id, updateStateRequest)
+    // 顯示成功消息
+  } catch (error) {
+    // 顯示錯誤消息
   }
 }
 

@@ -31,7 +31,7 @@ class SchedulerService {
   }
 
   async updateTaskState(id: number, stateData: TaskStateUpdateRequest): Promise<void> {
-    return apiService.put<void>(`${this.basePath}/${id}/state`, stateData)
+    return apiService.patch<void>(`${this.basePath}/${id}/state`, stateData)
   }
 
   async triggerTask(id: number): Promise<void> {
