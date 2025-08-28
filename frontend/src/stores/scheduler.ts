@@ -57,24 +57,6 @@ export const useSchedulerStore = defineStore('scheduler', () => {
     }
   }
 
-  // 🔥 新增：getTask 方法（直接返回任務數據）
-  const getTask = async (id: number): Promise<ScheduledTaskResponse> => {
-    try {
-      loading.value = true
-      error.value = null
-      const task = await schedulerService.getTask(id)
-      currentTask.value = task
-      return task
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '獲取任務詳情失敗'
-      error.value = errorMessage
-      console.error('Failed to get task:', err)
-      throw err
-    } finally {
-      loading.value = false
-    }
-  }
-
   const createTask = async (taskData: ScheduledTaskCreate) => {
     try {
       loading.value = true
@@ -209,7 +191,6 @@ export const useSchedulerStore = defineStore('scheduler', () => {
     // Actions
     fetchTasks,
     fetchTask,
-    getTask, // 🔥 新增：暴露 getTask 方法
     createTask,
     updateTask,
     deleteTask,
