@@ -1,28 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Dict, Any
-from datetime import datetime
-
-
-class ExecutionResult:
-    """執行結果封裝類"""
-    def __init__(self, success: bool, message: str, data: Dict[str, Any] = None, 
-                 execution_time: float = 0.0, status_code: int = None):
-        self.success = success
-        self.message = message
-        self.data = data or {}
-        self.execution_time = execution_time
-        self.status_code = status_code
-        self.timestamp = datetime.now()
-    
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            'success': self.success,
-            'message': self.message,
-            'data': self.data,
-            'execution_time': self.execution_time,
-            'status_code': self.status_code,
-            'timestamp': self.timestamp.isoformat()
-        }
+from src.models.pydantic.strategy import ExecutionResult
 
 
 class ExecutionStrategy(ABC):

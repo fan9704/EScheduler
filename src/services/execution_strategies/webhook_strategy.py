@@ -3,7 +3,8 @@ import asyncio
 import logging
 import json
 from typing import Dict, Any
-from . import ExecutionStrategy, ExecutionResult
+from . import ExecutionStrategy
+from src.models.pydantic.strategy import ExecutionResult
 
 logger = logging.getLogger(__name__)
 
