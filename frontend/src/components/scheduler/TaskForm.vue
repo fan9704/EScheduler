@@ -99,8 +99,10 @@
           <!-- 新增啟用開關 -->
           <v-col cols="12" md="6">
             <v-switch
-              v-model="formData.enabled"
-              :color="formData.enabled ? 'success' : 'grey'"
+              v-model="formData.state"
+              :value="TaskState.ENABLED"
+              :false-value="TaskState.DISABLED"
+              :color="formData.state === TaskState.ENABLED ? 'success' : 'grey'"
               label="啟用任務"
               inset
             />
@@ -149,7 +151,7 @@ const formData = ref({
   target_arn: "",
   target_input: {},
   max_retry_attempts: 3,
-  enabled: true,
+  state: TaskState.ENABLED,
 });
 
 const isEdit = computed(() => {
@@ -183,7 +185,8 @@ watch(
           target_arn: newData.target_arn || "",
           target_input: newData.target_input || {},
           max_retry_attempts: newData.max_retry_attempts || 3,
-          enabled: newData.enabled !== undefined ? newData.enabled : true,
+          state:
+            newData.state !== undefined ? newData.state : TaskState.ENABLED,
         };
         targetInputText.value = JSON.stringify(
           newData.target_input || {},
@@ -216,7 +219,6 @@ const handleSubmit = async () => {
   if (valid) {
     const payload = {
       ...formData.value,
-      state: formData.value.enabled ? TaskState.ENABLED : TaskState.DISABLED, // 判斷開關是否啟用，並設置狀態
     };
     console.log("TaskForm 提交數據:", payload);
     emit("submit", payload);

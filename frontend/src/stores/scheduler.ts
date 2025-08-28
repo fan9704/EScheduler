@@ -48,12 +48,13 @@ export const useSchedulerStore = defineStore("scheduler", () => {
     try {
       loading.value = true;
       error.value = null;
-      currentTask.value = await schedulerService.getTask(id);
-      return currentTask.value; // 回傳值
+      const task = await schedulerService.getTask(id);
+      currentTask.value = task;
+      return task;
     } catch (err) {
       error.value = err instanceof Error ? err.message : "獲取任務詳情失敗";
       console.error("Failed to fetch task:", err);
-      return null; // 回傳值
+      throw err;
     } finally {
       loading.value = false;
     }

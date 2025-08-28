@@ -9,7 +9,7 @@ export interface ScheduledTaskCreate {
   max_retry_attempts?: number;
   retry_policy?: Record<string, any>;
   dead_letter_config?: Record<string, any>;
-  enabled: boolean; // 判斷開關是否啟用
+  state?: TaskState;
 }
 
 export interface ScheduledTaskUpdate {
@@ -35,7 +35,7 @@ export interface ScheduledTaskResponse {
   target_type: string;
   target_arn: string;
   target_input?: Record<string, any>;
-  state: string;
+  state: TaskState; // 改成 TaskState enum
   last_execution_time?: string;
   next_execution_time?: string;
   execution_count: number;
@@ -44,7 +44,6 @@ export interface ScheduledTaskResponse {
   dead_letter_config?: Record<string, any>;
   created_at: string;
   updated_at: string;
-  enabled: boolean; // 判斷開關是否啟用
 }
 
 export interface TaskStateUpdateRequest {

@@ -127,7 +127,6 @@ class SchedulerService:
         # 創建任務
         task_dict = task_data.dict()
         task_dict["next_execution_time"] = next_execution
-        task_dict["state"] = TaskState.ENABLED
         
         task = await self.task_repository.create(**task_dict)
         logger.info(f"創建新任務: {task.name} (ID: {task.id})")

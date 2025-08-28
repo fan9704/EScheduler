@@ -24,7 +24,8 @@ class ScheduledTaskCreate(BaseModel):
     max_retry_attempts: int = Field(3, ge=0, le=10, description="最大重試次數")
     retry_policy: Optional[Dict[str, Any]] = Field(None, description="重試策略")
     dead_letter_config: Optional[Dict[str, Any]] = Field(None, description="死信佇列配置")
-    
+    state: TaskState = Field(default=TaskState.ENABLED, description="任務狀態")
+
     @validator('schedule_expression')
     def validate_schedule_expression(cls, v):
         """驗證排程表達式格式"""
