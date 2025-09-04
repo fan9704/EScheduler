@@ -2,16 +2,15 @@ import aio_pika
 import asyncio
 import logging
 import json
-from datetime import datetime
 from typing import Dict, Any
 from . import ExecutionStrategy
-from src.models.pydantic.strategy import ExecutionResult
+from src.models.pydantic.strategy import ExecutionResult, RabbitMQResult
 
 logger = logging.getLogger(__name__)
 
 
 class RabbitMQExecutionStrategy(ExecutionStrategy):
-    """RabbitMQ 訊息發送執行策略（支援 Exchange / Queue / 優先級 / 死信）"""
+    """RabbitMQ 訊息發送執行策略（支援 Exchange Type / Queue / 優先級 / 死信）"""
     
     def __init__(self, connection_url: str = None):
         self.connection_url = connection_url or "amqp://guest:guest@localhost:5672/"
@@ -29,19 +28,24 @@ class RabbitMQExecutionStrategy(ExecutionStrategy):
                     execution_time=0.0
                 )
             
-            # 基本參數解析
+            # 基本參數
             queue_name = target_arn
             exchange_name = target_input.get("exchange", "")
             routing_key = target_input.get("routing_key", target_arn)
             message_body = target_input.get("message", {})
             message_properties = target_input.get("properties", {})
+            is_persistent = target_input.get("is_persistent", True)
 
-            # 新增進階功能參數
-            queue_args = target_input.get("queue_args", {}) # e.g. {"x-max-priority": 10, "x-dead-letter-exchange": "dlx"}
-            ttl = target_input.get("ttl")                   # 消息過期時間 (ms)
-            priority = target_input.get("priority")         # 消息優先級
+            # 進階參數
+            queue_args = target_input.get("queue_args", {})
+            ttl = target_input.get("ttl")
+            priority = target_input.get("priority")
+            exchange_type_str: str = target_input.get("exchange_type", "direct")  # 預設 direct
+
+            # 轉換 exchange_type
+            exchange_type = getattr(aio_pika.ExchangeType, exchange_type_str.upper(), aio_pika.ExchangeType.DIRECT)
             
-            logger.info(f"發送 RabbitMQ 訊息到: {target_arn}")
+            logger.info(f"發送 RabbitMQ 訊息到: {target_arn}, exchange_type={exchange_type_str}")
             
             # 建立連接
             connection = await aio_pika.connect_robust(self.connection_url)
@@ -51,7 +55,8 @@ class RabbitMQExecutionStrategy(ExecutionStrategy):
                 
                 # 設定消息屬性
                 properties = {
-                    "delivery_mode": aio_pika.DeliveryMode.PERSISTENT,  # 預設持久化
+                    "delivery_mode": aio_pika.DeliveryMode.PERSISTENT if (is_persistent) 
+                                     else aio_pika.DeliveryMode.NOT_PERSISTENT
                 }
                 properties.update(message_properties)
                 if ttl:
@@ -64,34 +69,39 @@ class RabbitMQExecutionStrategy(ExecutionStrategy):
                     **properties
                 )
 
-                # 如果指定 Exchange
+                # 發送到 Exchange
                 if exchange_name:
                     try:
                         exchange = await channel.get_exchange(exchange_name)
                     except Exception:
-                        exchange = await channel.declare_exchange(exchange_name, aio_pika.ExchangeType.DIRECT, durable=True)
+                        exchange = await channel.declare_exchange(
+                            exchange_name,
+                            exchange_type,
+                            durable=True
+                        )
                     
                     await exchange.publish(message, routing_key=routing_key)
-                    target_info = f"Exchange: {exchange_name}, Routing Key: {routing_key}"
+                    target_info = f"Exchange: {exchange_name} ({exchange_type_str}), Routing Key: {routing_key}"
 
-                # 如果沒指定 Exchange → 直接 Queue
+                # 沒指定 Exchange → Queue
                 else:
                     queue = await channel.declare_queue(queue_name, durable=True, arguments=queue_args)
                     await channel.default_exchange.publish(message, routing_key=queue_name)
                     target_info = f"Queue: {queue_name}"
 
                 execution_time = asyncio.get_event_loop().time() - start_time
+                rabbitMQ_result = RabbitMQResult(
+                    target=target_info,
+                    message_body=message_body,
+                    properties=properties,
+                    queue_args=queue_args,
+                    message_size=len(json.dumps(message_body))
+                )
                 
                 return ExecutionResult(
                     success=True,
                     message="RabbitMQ 訊息發送成功",
-                    data={
-                        "target": target_info,
-                        "message_body": message_body,
-                        "properties": properties,
-                        "queue_args": queue_args,
-                        "message_size": len(json.dumps(message_body)),
-                    },
+                    data=rabbitMQ_result,
                     execution_time=execution_time
                 )
                 
