@@ -8,6 +8,7 @@ from .scheduler import (
 )
 from src.models.pydantic.team import *
 
+from .strategy import ExecutionResult
 from .statistic import StatisticDashboardMetricResponse
 
 __all__ = [
@@ -17,5 +18,6 @@ __all__ = [
     "TaskExecutionResponse",
     "SchedulerStatsResponse",
     "TaskStateUpdateRequest",
-    "StatisticDashboardMetricResponse"
+    "StatisticDashboardMetricResponse",
+    "ExecutionResult"
 ]
