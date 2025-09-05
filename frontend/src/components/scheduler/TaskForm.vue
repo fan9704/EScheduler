@@ -87,15 +87,55 @@
               density="compact"
             />
           </v-col>
-          <v-col cols="12">
-            <v-textarea
-              v-model="targetInputText"
-              label="目標輸入參數 (JSON)"
-              variant="outlined"
-              rows="4"
-              placeholder='{"method": "GET", "headers": {"Accept": "application/json"}}'
-            />
-          </v-col>
+          <!-- HTTP 類型時顯示 Method、Header、Body -->
+          <template v-if="formData.target_type === 'http'">
+            <v-col cols="12" md="6">
+              <v-select
+                v-model="httpMethod"
+                :items="httpMethodOptions"
+                label="HTTP Method"
+                variant="outlined"
+                density="compact"
+                :rules="[rules.required]"
+                required
+              />
+            </v-col>
+            <v-col cols="12" md="6">
+              <v-textarea
+                v-model="httpHeadersText"
+                label="Headers (JSON)"
+                @blur="formatHeaders"
+                variant="outlined"
+                rows="2"
+                :error-messages="httpHeadersError ? [httpHeadersError] : []"
+                placeholder='{"Accept": "application/json"}'
+              />
+            </v-col>
+            <v-col cols="12">
+              <v-textarea
+                v-model="httpBodyText"
+                label="HTTP Body (JSON)"
+                @blur="formatBody"
+                variant="outlined"
+                rows="4"
+                :error-messages="httpBodyError ? [httpBodyError] : []"
+                placeholder='{"key": "value"}'
+              />
+            </v-col>
+          </template>
+          <!-- 其他類型維持原本 target_input 輸入 -->
+          <template v-else>
+            <v-col cols="12">
+              <v-textarea
+                v-model="targetInputText"
+                label="目標輸入參數 (JSON)"
+                variant="outlined"
+                rows="4"
+                placeholder='{"method": "GET", "headers": {"Accept": "application/json"}}'
+                :error-messages="targetInputError ? [targetInputError] : []"
+              />
+            </v-col>
+          </template>
           <!-- 新增啟用開關 -->
           <v-col cols="12" md="6">
             <v-switch
@@ -141,6 +181,15 @@ const emit = defineEmits<{
 
 const formRef = ref();
 const targetInputText = ref("");
+const targetInputError = ref("");
+
+// HTTP Method 欄位
+const httpMethod = ref("GET");
+const httpMethodOptions = ["GET", "POST", "PUT", "DELETE", "PATCH"];
+const httpHeadersText = ref("");
+const httpHeadersError = ref("");
+const httpBodyText = ref("");
+const httpBodyError = ref("");
 
 const formData = ref({
   name: "",
@@ -188,11 +237,22 @@ watch(
           state:
             newData.state !== undefined ? newData.state : TaskState.ENABLED,
         };
-        targetInputText.value = JSON.stringify(
-          newData.target_input || {},
-          null,
-          2
-        );
+        // HTTP 類型時分解 method/headers/body
+        if (formData.value.target_type === "http") {
+          httpMethod.value = newData.target_input?.method || "GET";
+          httpHeadersText.value = newData.target_input?.headers
+            ? JSON.stringify(newData.target_input.headers, null, 2)
+            : "";
+          httpBodyText.value = newData.target_input?.body
+            ? JSON.stringify(newData.target_input.body, null, 2)
+            : "";
+        } else {
+          targetInputText.value = JSON.stringify(
+            newData.target_input || {},
+            null,
+            2
+          );
+        }
         console.log("TaskForm 更新後的 formData:", formData.value);
       });
     }
@@ -200,12 +260,49 @@ watch(
   { immediate: true, deep: true }
 );
 
-// 監聽 target_input 文本變化
+// 監聽 HTTP 欄位變化
+watch(
+  [httpMethod, httpHeadersText, httpBodyText],
+  ([method, headers, body]) => {
+    if (formData.value.target_type === "http") {
+      let headersObj = {};
+      let bodyObj = {};
+      httpHeadersError.value = "";
+      httpBodyError.value = "";
+      // 檢查 headers
+      if (headers.trim()) {
+        try {
+          headersObj = JSON.parse(headers);
+        } catch (e) {
+          httpHeadersError.value = "Headers 格式錯誤: " + e.message;
+        }
+      }
+      // 檢查 body
+      if (body.trim()) {
+        try {
+          bodyObj = JSON.parse(body);
+        } catch (e) {
+          httpBodyError.value = "Body 格式錯誤: " + e.message;
+        }
+      }
+      formData.value.target_input = {
+        method,
+        headers: headersObj,
+        body: bodyObj,
+      };
+    }
+  }
+);
+
+// 監聽 target_input 變化 (非 HTTP 類型)
 watch(targetInputText, (newValue) => {
-  try {
-    formData.value.target_input = newValue ? JSON.parse(newValue) : {};
-  } catch (error) {
-    // JSON 格式錯誤，保持原值
+  if (formData.value.target_type !== "http") {
+    targetInputError.value = "";
+    try {
+      formData.value.target_input = newValue ? JSON.parse(newValue) : {};
+    } catch (error: any) {
+      targetInputError.value = "JSON 格式錯誤: " + error.message;
+    }
   }
 });
 
@@ -216,6 +313,12 @@ const openScheduleWizard = () => {
 
 const handleSubmit = async () => {
   const { valid } = await formRef.value.validate();
+  // 檢查 JSON 欄位錯誤
+  if (formData.value.target_type === "http") {
+    if (httpHeadersError.value || httpBodyError.value) return;
+  } else {
+    if (targetInputError.value) return;
+  }
   if (valid) {
     const payload = {
       ...formData.value,
@@ -243,4 +346,27 @@ const setScheduleExpression = (expression: string) => {
 defineExpose({
   setScheduleExpression,
 });
+
+// HTTP Headers/Body Formatters
+const formatHeaders = () => {
+  if (!httpHeadersText.value.trim()) return;
+  try {
+    const obj = JSON.parse(httpHeadersText.value);
+    httpHeadersText.value = JSON.stringify(obj, null, 2);
+    httpHeadersError.value = "";
+  } catch (e: any) {
+    httpHeadersError.value = "Headers 格式錯誤: " + e.message;
+  }
+};
+
+const formatBody = () => {
+  if (!httpBodyText.value.trim()) return;
+  try {
+    const obj = JSON.parse(httpBodyText.value);
+    httpBodyText.value = JSON.stringify(obj, null, 2);
+    httpBodyError.value = "";
+  } catch (e: any) {
+    httpBodyError.value = "Body 格式錯誤: " + e.message;
+  }
+};
 </script>
