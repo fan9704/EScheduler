@@ -3,7 +3,7 @@ import asyncio
 import logging
 from typing import Dict, Any
 from . import ExecutionStrategy
-from src.models.pydantic.strategy import ExecutionResult
+from src.models.pydantic.strategy import ExecutionResult, HTTPResult
 
 logger = logging.getLogger(__name__)
 
@@ -58,19 +58,20 @@ class HttpExecutionStrategy(ExecutionStrategy):
                         logger.info(f"HTTP 回應內容: {response_text[:200]}...")  # 只記錄前200字符
                         
                         success = 200 <= response.status < 300
+                        http_result = HTTPResult(
+                            method=method,
+                            url=str(response.url),
+                            request_headers=default_headers,
+                            request_params=params,
+                            request_data=data,
+                            response_body=response_text,
+                            response_headers=dict(response.headers)
+                        )
                         
                         return ExecutionResult(
                             success=success,
                             message=f"HTTP {method} 請求{'成功' if success else '失敗'} (狀態碼: {response.status})",
-                            data={
-                                'method': method,
-                                'url': str(response.url),
-                                'request_headers': default_headers,
-                                'request_params': params,
-                                'request_data': data,
-                                'response_body': response_text,
-                                'response_headers': dict(response.headers)
-                            },
+                            data=http_result,
                             execution_time=execution_time,
                             status_code=response.status
                         )
