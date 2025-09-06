@@ -5,11 +5,11 @@ from typing import Any, Dict, Optional
 from pydantic import BaseModel, Field
 from src.configs.cfg import TZ
 
-class BaseResult(BaseModel):
+class StrategyBaseResult(BaseModel):
     """所有 Result 的基底"""
     pass
 
-class RabbitMQResult(BaseResult):
+class RabbitMQResult(StrategyBaseResult):
     """RabbitQM 結果封裝"""
     target: str = Field(..., description="目標 Queue 或 Exchange 資訊")
     message_body: Dict[str, Any] = Field(..., description="訊息內容")
@@ -17,7 +17,7 @@ class RabbitMQResult(BaseResult):
     queue_args: Dict[str, Any] = Field(default_factory=dict, description="Queue 參數 (如死信, 最大優先級)")
     message_size: int = Field(..., description="訊息大小 (bytes)")
 
-class HTTPResult(BaseResult):
+class HTTPResult(StrategyBaseResult):
     """HTTP 結果封裝"""
     method: str = Field(..., description="HTTP 方法 (GET, POST, ...)")
     url: str = Field(..., description="請求的 URL")
@@ -27,7 +27,7 @@ class HTTPResult(BaseResult):
     response_body: Optional[str] = Field(None, description="回應內容 (純文字/JSON字串)")
     response_headers: Dict[str, Any] = Field(default_factory=dict, description="回應標頭")
 
-class WebhookResult(BaseResult):
+class WebhookResult(StrategyBaseResult):
     """Webhook 結果封裝"""
     method: str = Field(..., description="HTTP 方法 (POST, GET, ...)")
     url: str = Field(..., description="Webhook 目標 URL")
@@ -40,7 +40,7 @@ class ExecutionResult(BaseModel):
     """執行結果封裝類"""
     success: bool = Field(..., description="是否成功")
     message: str = Field(..., description="訊息內容")
-    data: Optional[BaseResult] = Field(default_factory=None, description="附加資料")
+    data: Optional[StrategyBaseResult] = Field(default_factory=None, description="附加資料")
     execution_time: float = Field(default=0.0, description="執行時間（秒）")
     status_code: Optional[int] = Field(default=None, description="狀態碼")
     timestamp: datetime = Field(default_factory=lambda: datetime.now(ZoneInfo(TZ)), description="時間戳")
