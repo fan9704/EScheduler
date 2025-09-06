@@ -4,7 +4,7 @@ import logging
 import json
 from typing import Dict, Any
 from . import ExecutionStrategy
-from src.models.pydantic.strategy import ExecutionResult
+from src.models.pydantic.strategy import ExecutionResult, WebhookResult
 
 logger = logging.getLogger(__name__)
 
@@ -65,20 +65,21 @@ class WebhookExecutionStrategy(ExecutionStrategy):
                 ) as response:
                     response_text = await response.text()
                     execution_time = asyncio.get_event_loop().time() - start_time
-                    print(response.status, response_text)
-                    success = 200 <= response.status < 300
                     
+                    success = 200 <= response.status < 300
+                    webhook_result = WebhookResult(
+                        method=method,
+                        url=str(response.url),
+                        body=body,
+                        has_signature=bool(secret),
+                        response_body=response_text,
+                        response_headers=dict(response.headers)
+                    )
+
                     return ExecutionResult(
                         success=success,
                         message=f"Webhook 調用{'成功' if success else '失敗'}",
-                        data={
-                            'method': method,
-                            'url': str(response.url),
-                            'body': body,
-                            'has_signature': bool(secret),
-                            'response_body': response_text,
-                            'response_headers': dict(response.headers)
-                        },
+                        data=webhook_result,
                         execution_time=execution_time,
                         status_code=response.status
                     )
