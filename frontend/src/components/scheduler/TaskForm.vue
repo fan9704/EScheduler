@@ -101,15 +101,57 @@
               />
             </v-col>
             <v-col cols="12" md="6">
-              <v-textarea
-                v-model="httpHeadersText"
-                label="Headers (JSON)"
-                @blur="formatHeaders"
-                variant="outlined"
-                rows="2"
-                :error-messages="httpHeadersError ? [httpHeadersError] : []"
-                placeholder='{"Accept": "application/json"}'
-              />
+              <div style="position: relative">
+                <div
+                  class="font-weight-bold"
+                  style="position: absolute; top: -24px; left: 0"
+                >
+                  HTTP Headers
+                </div>
+                <div
+                  v-for="(row, idx) in headerRows"
+                  :key="idx"
+                  class="d-flex align-center mb-2"
+                  style="margin-top: 0px"
+                >
+                  <v-combobox
+                    v-model="row.key"
+                    :items="commonHeaders"
+                    label="Key"
+                    variant="outlined"
+                    density="compact"
+                    class="mr-2"
+                    clearable
+                    hide-details
+                    style="max-width: 220px"
+                    filterable
+                    solo
+                  />
+                  <v-text-field
+                    v-model="row.value"
+                    label="Value"
+                    variant="outlined"
+                    density="compact"
+                    hide-details
+                    style="max-width: 220px"
+                  />
+                  <v-btn
+                    icon="mdi-delete"
+                    @click="headerRows.splice(idx, 1)"
+                    v-if="headerRows.length > 1"
+                    size="small"
+                    variant="text"
+                  />
+                </div>
+                <v-btn
+                  color="primary"
+                  variant="text"
+                  @click="headerRows.push({ key: '', value: '' })"
+                  size="small"
+                >
+                  <v-icon>mdi-plus</v-icon> 新增 Header
+                </v-btn>
+              </div>
             </v-col>
             <v-col cols="12">
               <v-textarea
@@ -191,6 +233,34 @@ const httpHeadersError = ref("");
 const httpBodyText = ref("");
 const httpBodyError = ref("");
 
+// HTTP Headers 欄位
+const headerRows = ref([{ key: "", value: "" }]);
+const commonHeaders = [
+  "Authorization",
+  "Host",
+  "Accept-Language",
+  "Accept-Encoding",
+  "Cookie",
+  "Cache-Control",
+  "Content-Length",
+  "Content-Type",
+  "Accept",
+  "Referer",
+  "User-Agent",
+  "WWW-Authenticate",
+  "Proxy-Authenticate",
+  "Proxy-Authorization",
+  "Age",
+];
+// 組合 headers 物件
+const getHeadersObject = () => {
+  const obj: Record<string, string> = {};
+  headerRows.value.forEach((row) => {
+    if (row.key) obj[row.key] = row.value;
+  });
+  return obj;
+};
+
 const formData = ref({
   name: "",
   description: "",
@@ -262,36 +332,24 @@ watch(
 
 // 監聽 HTTP 欄位變化
 watch(
-  [httpMethod, httpHeadersText, httpBodyText],
+  [httpMethod, headerRows, httpBodyText],
   ([method, headers, body]) => {
     if (formData.value.target_type === "http") {
-      let headersObj = {};
       let bodyObj = {};
-      httpHeadersError.value = "";
-      httpBodyError.value = "";
-      // 檢查 headers
-      if (headers.trim()) {
-        try {
-          headersObj = JSON.parse(headers);
-        } catch (e) {
-          httpHeadersError.value = "Headers 格式錯誤: " + e.message;
-        }
-      }
-      // 檢查 body
+
       if (body.trim()) {
         try {
           bodyObj = JSON.parse(body);
-        } catch (e) {
-          httpBodyError.value = "Body 格式錯誤: " + e.message;
-        }
+        } catch (e) {}
       }
       formData.value.target_input = {
         method,
-        headers: headersObj,
+        headers: getHeadersObject(),
         body: bodyObj,
       };
     }
-  }
+  },
+  { deep: true }
 );
 
 // 監聽 target_input 變化 (非 HTTP 類型)
@@ -347,26 +405,80 @@ defineExpose({
   setScheduleExpression,
 });
 
-// HTTP Headers/Body Formatters
-const formatHeaders = () => {
-  if (!httpHeadersText.value.trim()) return;
-  try {
-    const obj = JSON.parse(httpHeadersText.value);
-    httpHeadersText.value = JSON.stringify(obj, null, 2);
-    httpHeadersError.value = "";
-  } catch (e: any) {
-    httpHeadersError.value = "Headers 格式錯誤: " + e.message;
-  }
-};
-
 const formatBody = () => {
-  if (!httpBodyText.value.trim()) return;
+  let text = httpBodyText.value.trim();
+
+  // 如果是空的，清空錯誤內容
+  if (!text) {
+    httpBodyError.value = "";
+    httpBodyText.value = "";
+    return;
+  }
+
+  // 如果只輸入 { 或 "，自動補齊為 {} 或 ""
+  if (text === "{") {
+    httpBodyText.value = "{}";
+    httpBodyError.value = "";
+    return;
+  }
+
+  if (text === '"') {
+    httpBodyText.value = '""';
+    httpBodyError.value = "";
+    return;
+  }
+
+  // 嘗試解析 JSON，成功則格式化並清除錯誤
   try {
-    const obj = JSON.parse(httpBodyText.value);
+    const obj = JSON.parse(text);
+    httpBodyText.value = JSON.stringify(obj, null, 2);
+    httpBodyError.value = "";
+    return;
+  } catch (e) {
+    // 解析失敗，進入自動補齊流程
+  }
+
+  // 自動補齊：補引號、括號
+  let modifiedText = text;
+
+  // 計算引號數量
+  const unescapedQuotes = text.replace(/\\"/g, "").match(/"/g) || [];
+  const quoteCount = unescapedQuotes.length;
+
+  // 檢查是否為未結束的 value 字串（如 {"key":"value)
+  // 如果引號數量為奇數且最後一個引號前是冒號，補上右引號
+  if (quoteCount % 2 === 1) {
+    const lastQuoteIndex = text.lastIndexOf('"');
+    let isValueStart = false;
+    for (let i = lastQuoteIndex - 1; i >= 0; i--) {
+      if (text[i] === " " || text[i] === "\n" || text[i] === "\t") continue;
+      if (text[i] === ":") {
+        isValueStart = true;
+        break;
+      }
+      break;
+    }
+    if (isValueStart) {
+      modifiedText += '"';
+    }
+  }
+
+  // 計算補齊後的括號數量
+  const modLeftBraces = (modifiedText.match(/{/g) || []).length;
+  const modRightBraces = (modifiedText.match(/}/g) || []).length;
+  // 補齊缺少的 }
+  const missingBraces = modLeftBraces - modRightBraces;
+  if (missingBraces > 0) {
+    modifiedText += "}".repeat(missingBraces);
+  }
+  // 再次嘗試解析補齊後的內容，成功則格式化，失敗則顯示錯誤並保留原始內容
+  try {
+    const obj = JSON.parse(modifiedText);
     httpBodyText.value = JSON.stringify(obj, null, 2);
     httpBodyError.value = "";
   } catch (e: any) {
     httpBodyError.value = "Body 格式錯誤: " + e.message;
+    httpBodyText.value = text;
   }
 };
 </script>
