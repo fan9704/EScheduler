@@ -79,7 +79,7 @@
               required
             />
           </v-col>
-          <v-col cols="12" md="6">
+          <v-col cols="12" md="3">
             <v-text-field
               v-model="formData.timezone"
               label="時區"
@@ -89,7 +89,7 @@
           </v-col>
           <!-- HTTP 類型時顯示 Method、Header、Body -->
           <template v-if="formData.target_type === 'http'">
-            <v-col cols="12" md="6">
+            <v-col cols="12" md="3">
               <v-select
                 v-model="httpMethod"
                 :items="httpMethodOptions"
@@ -100,7 +100,7 @@
                 required
               />
             </v-col>
-            <v-col cols="12" md="6">
+            <v-col cols="12" md="12">
               <div style="position: relative">
                 <div
                   class="font-weight-bold"
@@ -163,6 +163,12 @@
                 :error-messages="httpBodyError ? [httpBodyError] : []"
                 placeholder='{"key": "value"}'
               />
+              <Codemirror
+                  v-model:value="httpBodyText"
+                  :options="cmOptions"
+                  height="400"
+              >
+              </Codemirror>
             </v-col>
           </template>
           <!-- 其他類型維持原本 target_input 輸入 -->
@@ -203,7 +209,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick } from "vue";
+import {ref, computed, watch, nextTick, reactive} from "vue";
 import type {
   ScheduledTaskCreate,
   ScheduledTaskResponse,
@@ -224,6 +230,16 @@ const emit = defineEmits<{
 const formRef = ref();
 const targetInputText = ref("");
 const targetInputError = ref("");
+const cmOptions = reactive({
+  mode: "application/json",
+  theme:"tomorrow-night-bright",
+  lineNumbers: true,
+  lineWiseCopyCut: true,
+  gutters: ["CodeMirror-lint-markers"],
+  autoCloseBrackets: true,
+  matchBrackets: true,
+  lint: true,
+});
 
 // HTTP Method 欄位
 const httpMethod = ref("GET");
@@ -336,7 +352,6 @@ watch(
   ([method, headers, body]) => {
     if (formData.value.target_type === "http") {
       let bodyObj = {};
-
       if (body.trim()) {
         try {
           bodyObj = JSON.parse(body);

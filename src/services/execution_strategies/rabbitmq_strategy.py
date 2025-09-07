@@ -110,9 +110,11 @@ class RabbitMQExecutionStrategy(ExecutionStrategy):
                 
         except Exception as e:
             execution_time = asyncio.get_event_loop().time() - start_time
+            print(f"RabbitMQ 發送失敗: {str(e)}")
             return ExecutionResult(
                 success=False,
                 message=f"RabbitMQ 訊息發送失敗: {str(e)}",
+                data=None,
                 execution_time=execution_time
             )
     
