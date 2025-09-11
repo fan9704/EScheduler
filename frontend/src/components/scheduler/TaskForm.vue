@@ -154,19 +154,13 @@
               </div>
             </v-col>
             <v-col cols="12">
-              <v-textarea
-                v-model="httpBodyText"
-                label="HTTP Body (JSON)"
-                @blur="formatBody"
-                variant="outlined"
-                rows="4"
-                :error-messages="httpBodyError ? [httpBodyError] : []"
-                placeholder='{"key": "value"}'
-              />
+              <div class="font-weight-bold" style="margin-bottom: 8px">
+                HTTP Body (JSON)
+              </div>
               <Codemirror
-                  v-model:value="httpBodyText"
-                  :options="cmOptions"
-                  height="400"
+                v-model:value="httpBodyText"
+                :options="cmOptions"
+                height="400"
               >
               </Codemirror>
             </v-col>
@@ -209,7 +203,7 @@
 </template>
 
 <script setup lang="ts">
-import {ref, computed, watch, nextTick, reactive} from "vue";
+import { ref, computed, watch, nextTick, reactive } from "vue";
 import type {
   ScheduledTaskCreate,
   ScheduledTaskResponse,
@@ -232,7 +226,7 @@ const targetInputText = ref("");
 const targetInputError = ref("");
 const cmOptions = reactive({
   mode: "application/json",
-  theme:"tomorrow-night-bright",
+  theme: "tomorrow-night-bright",
   lineNumbers: true,
   lineWiseCopyCut: true,
   gutters: ["CodeMirror-lint-markers"],
@@ -419,81 +413,4 @@ const setScheduleExpression = (expression: string) => {
 defineExpose({
   setScheduleExpression,
 });
-
-const formatBody = () => {
-  let text = httpBodyText.value.trim();
-
-  // 如果是空的，清空錯誤內容
-  if (!text) {
-    httpBodyError.value = "";
-    httpBodyText.value = "";
-    return;
-  }
-
-  // 如果只輸入 { 或 "，自動補齊為 {} 或 ""
-  if (text === "{") {
-    httpBodyText.value = "{}";
-    httpBodyError.value = "";
-    return;
-  }
-
-  if (text === '"') {
-    httpBodyText.value = '""';
-    httpBodyError.value = "";
-    return;
-  }
-
-  // 嘗試解析 JSON，成功則格式化並清除錯誤
-  try {
-    const obj = JSON.parse(text);
-    httpBodyText.value = JSON.stringify(obj, null, 2);
-    httpBodyError.value = "";
-    return;
-  } catch (e) {
-    // 解析失敗，進入自動補齊流程
-  }
-
-  // 自動補齊：補引號、括號
-  let modifiedText = text;
-
-  // 計算引號數量
-  const unescapedQuotes = text.replace(/\\"/g, "").match(/"/g) || [];
-  const quoteCount = unescapedQuotes.length;
-
-  // 檢查是否為未結束的 value 字串（如 {"key":"value)
-  // 如果引號數量為奇數且最後一個引號前是冒號，補上右引號
-  if (quoteCount % 2 === 1) {
-    const lastQuoteIndex = text.lastIndexOf('"');
-    let isValueStart = false;
-    for (let i = lastQuoteIndex - 1; i >= 0; i--) {
-      if (text[i] === " " || text[i] === "\n" || text[i] === "\t") continue;
-      if (text[i] === ":") {
-        isValueStart = true;
-        break;
-      }
-      break;
-    }
-    if (isValueStart) {
-      modifiedText += '"';
-    }
-  }
-
-  // 計算補齊後的括號數量
-  const modLeftBraces = (modifiedText.match(/{/g) || []).length;
-  const modRightBraces = (modifiedText.match(/}/g) || []).length;
-  // 補齊缺少的 }
-  const missingBraces = modLeftBraces - modRightBraces;
-  if (missingBraces > 0) {
-    modifiedText += "}".repeat(missingBraces);
-  }
-  // 再次嘗試解析補齊後的內容，成功則格式化，失敗則顯示錯誤並保留原始內容
-  try {
-    const obj = JSON.parse(modifiedText);
-    httpBodyText.value = JSON.stringify(obj, null, 2);
-    httpBodyError.value = "";
-  } catch (e: any) {
-    httpBodyError.value = "Body 格式錯誤: " + e.message;
-    httpBodyText.value = text;
-  }
-};
 </script>
