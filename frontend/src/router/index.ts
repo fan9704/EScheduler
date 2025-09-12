@@ -5,7 +5,6 @@ import type { RouteRecordRaw } from 'vue-router'
 import Dashboard from '@/views/Dashboard.vue'
 import TaskList from '@/views/TaskList.vue'
 import TaskCreate from '@/views/TaskCreate.vue'
-import TaskEdit from '@/views/TaskEdit.vue'
 import ScheduleHelper from '@/views/ScheduleHelper.vue'
 
 const routes: RouteRecordRaw[] = [
