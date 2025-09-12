@@ -256,7 +256,7 @@ const httpMethod = ref("GET");
 const httpMethodOptions = ["GET", "POST", "PUT", "DELETE", "PATCH"];
 const httpHeadersText = ref("");
 const httpHeadersError = ref("");
-const httpBodyText = ref("");
+const httpBodyText = ref(JSON.stringify(props.initialData?.target_input) ||"");
 const httpBodyError = ref("");
 
 // HTTP Headers 欄位
