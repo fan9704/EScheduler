@@ -135,11 +135,13 @@ const handleValidate = (request: ScheduleValidationRequest) => {
 }
 
 const useExpression = () => {
+  // @ts-ignore
   if (currentExpression?.value) {
     // 跳轉到創建任務頁面，並帶上表達式
     router.push({
       path: '/tasks/create',
       query: {
+        // @ts-ignore
         expression: currentExpression?.value.expression,
       },
     })
