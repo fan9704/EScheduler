@@ -1,57 +1,57 @@
 export interface RateExpressionRequest {
-  value: number
-  unit: TimeUnit
+  value: number;
+  unit: TimeUnit;
 }
 
 export interface CronExpressionRequest {
-  minute: string
-  hour: string
-  day: string
-  month: string
-  weekday: string
+  minute: string;
+  hour: string;
+  day: string;
+  month: string;
+  weekday: string;
 }
 
 export interface QuickScheduleRequest {
-  type: string
-  time?: string
-  weekdays?: number[]
-  interval?: number
-  unit?: string
+  type: string;
+  time?: string;
+  weekdays?: number[];
+  interval?: number;
+  unit?: string;
 }
 
 export interface ScheduleExpressionResponse {
-  expression: string
-  type: ScheduleType
-  description: string
-  next_runs: string[]
+  expression: string;
+  type: ScheduleType;
+  description: string;
+  next_runs: string[];
 }
 
 export interface ScheduleValidationRequest {
-  expression: string
+  expression: string;
 }
 
 export interface ScheduleValidationResponse {
-  valid: boolean
-  type?: ScheduleType
-  description?: string
-  error?: string
-  next_runs?: string[]
+  valid: boolean;
+  type?: ScheduleType;
+  description?: string;
+  error?: string;
+  next_runs?: string[];
 }
 
 export interface ScheduleTemplateResponse {
-  name: string
-  description: string
-  expression: string
-  type: ScheduleType
-  category: string
+  name: string;
+  description: string;
+  expression: string;
+  type: ScheduleType;
+  category: string;
 }
 
 export interface CronHelpResponse {
-  field: CronField
-  description: string
-  range: string
-  special_chars: string[]
-  examples: Array<{ value: string; description: string }>
+  field: CronField;
+  description: string;
+  range: string;
+  special_chars: string[];
+  examples: Array<{ value: string; description: string }>;
 }
 
 export enum ScheduleType {

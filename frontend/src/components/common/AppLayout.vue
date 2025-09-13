@@ -1,9 +1,9 @@
 <template>
   <v-app>
     <AppSidebar v-model="drawer" />
-    
+
     <AppHeader @toggle-drawer="drawer = !drawer" />
-    
+
     <v-main>
       <v-container fluid class="pa-4">
         <router-view />
@@ -13,9 +13,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import AppSidebar from './AppSidebar.vue'
-import AppHeader from './AppHeader.vue'
+import { ref } from 'vue';
 
-const drawer = ref(true)
+import AppSidebar from './AppSidebar.vue';
+import AppHeader from './AppHeader.vue';
+
+const drawer = ref(true);
 </script>

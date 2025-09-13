@@ -3,5 +3,5 @@
 </template>
 
 <script setup lang="ts">
-import TaskListComponent from '@/components/scheduler/TaskList.vue'
+import TaskListComponent from '@/components/scheduler/TaskList.vue';
 </script>

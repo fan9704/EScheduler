@@ -49,22 +49,15 @@
           />
         </v-col>
       </v-row>
-      
+
       <v-divider class="my-4" />
-      
+
       <div class="mb-3">
         <div class="text-caption text-medium-emphasis mb-2">預覽表達式</div>
-        <v-code class="text-body-2">
-          cron({{ cronExpression }})
-        </v-code>
+        <v-code class="text-body-2"> cron({{ cronExpression }}) </v-code>
       </div>
-      
-      <v-btn
-        color="primary"
-        block
-        size="large"
-        @click="generateExpression"
-      >
+
+      <v-btn color="primary" block size="large" @click="generateExpression">
         <v-icon class="mr-2">mdi-creation</v-icon>
         生成 Cron 表達式
       </v-btn>
@@ -73,12 +66,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import type { CronExpressionRequest } from '@/models/schedule_helper'
+import { ref, computed } from 'vue';
+
+import type { CronExpressionRequest } from '@/models/schedule_helper';
 
 const emit = defineEmits<{
-  generate: [request: CronExpressionRequest]
-}>()
+  generate: [request: CronExpressionRequest];
+}>();
 
 const cronFields = ref({
   minute: '*',
@@ -86,7 +80,7 @@ const cronFields = ref({
   day: '*',
   month: '*',
   weekday: '*',
-})
+});
 
 const minuteOptions = [
   { title: '每分鐘', value: '*' },
@@ -96,7 +90,7 @@ const minuteOptions = [
   { title: '每30分鐘', value: '*/30' },
   { title: '第0分鐘', value: '0' },
   { title: '第30分鐘', value: '30' },
-]
+];
 
 const hourOptions = [
   { title: '每小時', value: '*' },
@@ -106,7 +100,7 @@ const hourOptions = [
   { title: '上午9點', value: '9' },
   { title: '下午6點', value: '18' },
   { title: '工作時間 (9-17)', value: '9-17' },
-]
+];
 
 const dayOptions = [
   { title: '每天', value: '*' },
@@ -114,7 +108,7 @@ const dayOptions = [
   { title: '每月15號', value: '15' },
   { title: '每月最後一天', value: 'L' },
   { title: '1號和15號', value: '1,15' },
-]
+];
 
 const monthOptions = [
   { title: '每月', value: '*' },
@@ -123,7 +117,7 @@ const monthOptions = [
   { title: '12月', value: '12' },
   { title: '第一季 (1-3月)', value: '1-3' },
   { title: '第四季 (10-12月)', value: '10-12' },
-]
+];
 
 const weekdayOptions = [
   { title: '每天', value: '*' },
@@ -131,14 +125,14 @@ const weekdayOptions = [
   { title: '週五', value: '5' },
   { title: '週末', value: '0,6' },
   { title: '工作日 (週一到週五)', value: '1-5' },
-]
+];
 
 const cronExpression = computed(() => {
-  return `${cronFields.value.minute} ${cronFields.value.hour} ${cronFields.value.day} ${cronFields.value.month} ${cronFields.value.weekday}`
-})
+  return `${cronFields.value.minute} ${cronFields.value.hour} ${cronFields.value.day} ${cronFields.value.month} ${cronFields.value.weekday}`;
+});
 
 const generateExpression = () => {
-  console.log('生成 Cron 表達式:', cronFields.value) // 調試用
-  emit('generate', cronFields.value)
-}
+  console.log('生成 Cron 表達式:', cronFields.value); // 調試用
+  emit('generate', cronFields.value);
+};
 </script>

@@ -1,7 +1,7 @@
 <template>
   <v-form ref="formRef" @submit.prevent="handleSubmit">
     <v-card>
-      <v-card-title>{{ isEdit ? "編輯任務" : "創建任務" }}</v-card-title>
+      <v-card-title>{{ isEdit ? '編輯任務' : '創建任務' }}</v-card-title>
       <v-card-text>
         <v-row>
           <v-col cols="12" md="6">
@@ -47,12 +47,7 @@
                 required
                 class="flex-grow-1"
               />
-              <v-btn
-                color="primary"
-                variant="outlined"
-                size="large"
-                @click="openScheduleWizard"
-              >
+              <v-btn color="primary" variant="outlined" size="large" @click="openScheduleWizard">
                 <v-icon class="mr-2">mdi-wizard-hat</v-icon>
                 排程精靈
               </v-btn>
@@ -102,10 +97,7 @@
             </v-col>
             <v-col cols="12" md="12">
               <div style="position: relative">
-                <div
-                  class="font-weight-bold"
-                  style="position: absolute; top: -24px; left: 0"
-                >
+                <div class="font-weight-bold" style="position: absolute; top: -24px; left: 0">
                   HTTP Headers
                 </div>
                 <div
@@ -136,32 +128,26 @@
                     style="max-width: 220px"
                   />
                   <v-btn
-                    icon="mdi-delete"
-                    @click="headerRows.splice(idx, 1)"
                     v-if="headerRows.length > 1"
+                    icon="mdi-delete"
                     size="small"
                     variant="text"
+                    @click="headerRows.splice(idx, 1)"
                   />
                 </div>
                 <v-btn
                   color="primary"
                   variant="text"
-                  @click="headerRows.push({ key: '', value: '' })"
                   size="small"
+                  @click="headerRows.push({ key: '', value: '' })"
                 >
                   <v-icon>mdi-plus</v-icon> 新增 Header
                 </v-btn>
               </div>
             </v-col>
             <v-col cols="12">
-              <div class="font-weight-bold" style="margin-bottom: 8px">
-                HTTP Body (JSON)
-              </div>
-              <Codemirror
-                v-model:value="httpBodyText"
-                :options="cmOptions"
-                height="400"
-              >
+              <div class="font-weight-bold" style="margin-bottom: 8px">HTTP Body (JSON)</div>
+              <Codemirror v-model:value="httpBodyText" :options="cmOptions" height="400">
               </Codemirror>
             </v-col>
           </template>
@@ -195,7 +181,7 @@
         <v-spacer />
         <v-btn variant="outlined" @click="$emit('cancel')"> 取消 </v-btn>
         <v-btn color="primary" type="submit" :loading="loading">
-          {{ isEdit ? "更新" : "創建" }}
+          {{ isEdit ? '更新' : '創建' }}
         </v-btn>
       </v-card-actions>
     </v-card>
@@ -203,13 +189,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick, reactive } from "vue";
-import type {
-  ScheduledTaskCreate,
-  ScheduledTaskResponse,
-  TargetType,
-} from "@/models/scheduler";
-import { TaskState } from "@/models/scheduler";
+import { ref, computed, watch, nextTick, reactive } from 'vue';
+
+import type { ScheduledTaskCreate, ScheduledTaskResponse, TargetType } from '@/models/scheduler';
+import { TaskState } from '@/models/scheduler';
 const props = defineProps<{
   initialData?: ScheduledTaskResponse | Partial<ScheduledTaskCreate>;
   loading?: boolean;
@@ -218,49 +201,49 @@ const props = defineProps<{
 const emit = defineEmits<{
   submit: [data: ScheduledTaskCreate];
   cancel: [];
-  "open-schedule-wizard": [formData: Partial<ScheduledTaskCreate>];
+  'open-schedule-wizard': [formData: Partial<ScheduledTaskCreate>];
 }>();
 
 const formRef = ref();
-const targetInputText = ref("");
-const targetInputError = ref("");
+const targetInputText = ref('');
+const targetInputError = ref('');
 const cmOptions = reactive({
-  mode: "application/json",
-  theme: "tomorrow-night-bright",
+  mode: 'application/json',
+  theme: 'tomorrow-night-bright',
   lineNumbers: true,
   lineWiseCopyCut: true,
-  gutters: ["CodeMirror-lint-markers"],
+  gutters: ['CodeMirror-lint-markers'],
   autoCloseBrackets: true,
   matchBrackets: true,
   lint: true,
 });
 
 // HTTP Method 欄位
-const httpMethod = ref("GET");
-const httpMethodOptions = ["GET", "POST", "PUT", "DELETE", "PATCH"];
-const httpHeadersText = ref("");
-const httpHeadersError = ref("");
-const httpBodyText = ref("");
-const httpBodyError = ref("");
+const httpMethod = ref('GET');
+const httpMethodOptions = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'];
+const httpHeadersText = ref('');
+const httpHeadersError = ref('');
+const httpBodyText = ref('');
+const httpBodyError = ref('');
 
 // HTTP Headers 欄位
-const headerRows = ref([{ key: "", value: "" }]);
+const headerRows = ref([{ key: '', value: '' }]);
 const commonHeaders = [
-  "Authorization",
-  "Host",
-  "Accept-Language",
-  "Accept-Encoding",
-  "Cookie",
-  "Cache-Control",
-  "Content-Length",
-  "Content-Type",
-  "Accept",
-  "Referer",
-  "User-Agent",
-  "WWW-Authenticate",
-  "Proxy-Authenticate",
-  "Proxy-Authorization",
-  "Age",
+  'Authorization',
+  'Host',
+  'Accept-Language',
+  'Accept-Encoding',
+  'Cookie',
+  'Cache-Control',
+  'Content-Length',
+  'Content-Type',
+  'Accept',
+  'Referer',
+  'User-Agent',
+  'WWW-Authenticate',
+  'Proxy-Authenticate',
+  'Proxy-Authorization',
+  'Age',
 ];
 // 組合 headers 物件
 const getHeadersObject = () => {
@@ -272,84 +255,81 @@ const getHeadersObject = () => {
 };
 
 const formData = ref({
-  name: "",
-  description: "",
-  schedule_expression: "",
-  timezone: "Asia/Taipei",
-  target_type: "http" as TargetType,
-  target_arn: "",
+  name: '',
+  description: '',
+  schedule_expression: '',
+  timezone: 'Asia/Taipei',
+  target_type: 'http' as TargetType,
+  target_arn: '',
   target_input: {},
   max_retry_attempts: 3,
   state: TaskState.ENABLED,
 });
 
 const isEdit = computed(() => {
-  return !!(props.initialData && "id" in props.initialData);
+  return !!(props.initialData && 'id' in props.initialData);
 });
 
 const targetTypeOptions = [
-  { title: "HTTP", value: "http" },
-  { title: "Webhook", value: "webhook" },
-  { title: "RabbitMQ", value: "rabbitmq" },
-  { title: "Email", value: "email" },
+  { title: 'HTTP', value: 'http' },
+  { title: 'Webhook', value: 'webhook' },
+  { title: 'RabbitMQ', value: 'rabbitmq' },
+  { title: 'Email', value: 'email' },
 ];
 
 const rules = {
-  required: (value: any) => !!value || "此欄位為必填",
+  required: (value: any) => !!value || '此欄位為必填',
 };
 
 // 監聽初始數據變化
 watch(
   () => props.initialData,
   (newData) => {
-    console.log("TaskForm 收到新的 initialData:", newData);
+    console.log('TaskForm 收到新的 initialData:', newData);
     if (newData) {
       nextTick(() => {
         formData.value = {
-          name: newData.name || "",
-          description: newData.description || "",
-          schedule_expression: newData.schedule_expression || "",
-          timezone: newData.timezone || "Asia/Taipei",
-          target_type: (newData.target_type as TargetType) || "http",
-          target_arn: newData.target_arn || "",
+          name: newData.name || '',
+          description: newData.description || '',
+          schedule_expression: newData.schedule_expression || '',
+          timezone: newData.timezone || 'Asia/Taipei',
+          target_type: (newData.target_type as TargetType) || 'http',
+          target_arn: newData.target_arn || '',
           target_input: newData.target_input || {},
           max_retry_attempts: newData.max_retry_attempts || 3,
-          state:
-            newData.state !== undefined ? newData.state : TaskState.ENABLED,
+          state: newData.state !== undefined ? newData.state : TaskState.ENABLED,
         };
         // HTTP 類型時分解 method/headers/body
-        if (formData.value.target_type === "http") {
-          httpMethod.value = newData.target_input?.method || "GET";
+        if (formData.value.target_type === 'http') {
+          httpMethod.value = newData.target_input?.method || 'GET';
           httpHeadersText.value = newData.target_input?.headers
             ? JSON.stringify(newData.target_input.headers, null, 2)
-            : "";
+            : '';
           httpBodyText.value = newData.target_input?.body
             ? JSON.stringify(newData.target_input.body, null, 2)
-            : "";
+            : '';
         } else {
-          targetInputText.value = JSON.stringify(
-            newData.target_input || {},
-            null,
-            2
-          );
+          targetInputText.value = JSON.stringify(newData.target_input || {}, null, 2);
         }
-        console.log("TaskForm 更新後的 formData:", formData.value);
+        console.log('TaskForm 更新後的 formData:', formData.value);
       });
     }
   },
-  { immediate: true, deep: true }
+  { immediate: true, deep: true },
 );
 
 // 監聽 HTTP 欄位變化
 watch(
   [httpMethod, headerRows, httpBodyText],
   ([method, headers, body]) => {
-    if (formData.value.target_type === "http") {
+    if (formData.value.target_type === 'http') {
       let bodyObj = {};
       if (body.trim()) {
         try {
           bodyObj = JSON.parse(body);
-        } catch (e) {}
+        } catch (e) {
+          console.error(e);
+        }
       }
       formData.value.target_input = {
         method,
@@ -358,30 +338,30 @@ watch(
       };
     }
   },
-  { deep: true }
+  { deep: true },
 );
 
 // 監聽 target_input 變化 (非 HTTP 類型)
 watch(targetInputText, (newValue) => {
-  if (formData.value.target_type !== "http") {
-    targetInputError.value = "";
+  if (formData.value.target_type !== 'http') {
+    targetInputError.value = '';
     try {
       formData.value.target_input = newValue ? JSON.parse(newValue) : {};
     } catch (error: any) {
-      targetInputError.value = "JSON 格式錯誤: " + error.message;
+      targetInputError.value = 'JSON 格式錯誤: ' + error.message;
     }
   }
 });
 
 const openScheduleWizard = () => {
-  console.log("TaskForm 點擊排程精靈按鈕，當前數據:", formData.value);
-  emit("open-schedule-wizard", { ...formData.value });
+  console.log('TaskForm 點擊排程精靈按鈕，當前數據:', formData.value);
+  emit('open-schedule-wizard', { ...formData.value });
 };
 
 const handleSubmit = async () => {
   const { valid } = await formRef.value.validate();
   // 檢查 JSON 欄位錯誤
-  if (formData.value.target_type === "http") {
+  if (formData.value.target_type === 'http') {
     if (httpHeadersError.value || httpBodyError.value) return;
   } else {
     if (targetInputError.value) return;
@@ -390,22 +370,19 @@ const handleSubmit = async () => {
     const payload = {
       ...formData.value,
     };
-    console.log("TaskForm 提交數據:", payload);
-    emit("submit", payload);
+    console.log('TaskForm 提交數據:', payload);
+    emit('submit', payload);
   }
 };
 
 // 🔥 新增：設置排程表達式的方法
 const setScheduleExpression = (expression: string) => {
-  console.log("TaskForm.setScheduleExpression 被調用，表達式:", expression);
+  console.log('TaskForm.setScheduleExpression 被調用，表達式:', expression);
   formData.value.schedule_expression = expression;
 
   // 使用 nextTick 確保 DOM 更新
   nextTick(() => {
-    console.log(
-      "TaskForm.setScheduleExpression 完成，當前 formData:",
-      formData.value
-    );
+    console.log('TaskForm.setScheduleExpression 完成，當前 formData:', formData.value);
   });
 };
 

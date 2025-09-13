@@ -1,4 +1,4 @@
-import { createI18n } from 'vue-i18n'
+import { createI18n } from 'vue-i18n';
 
 const messages = {
   'zh-TW': {
@@ -15,13 +15,13 @@ const messages = {
     },
     // 更多翻譯...
   },
-}
+};
 
 const i18n = createI18n({
   legacy: false,
   locale: 'zh-TW',
   fallbackLocale: 'zh-TW',
   messages,
-})
+});
 
-export default i18n
+export default i18n;

@@ -24,13 +24,7 @@
     </v-row>
 
     <v-row>
-      <v-col
-        v-for="template in filteredTemplates"
-        :key="template.name"
-        cols="12"
-        md="6"
-        lg="4"
-      >
+      <v-col v-for="template in filteredTemplates" :key="template.name" cols="12" md="6" lg="4">
         <v-card
           class="template-card"
           :class="{ selected: selectedTemplate?.name === template.name }"
@@ -77,21 +71,17 @@
     </v-row>
 
     <div v-if="filteredTemplates.length === 0" class="text-center py-8">
-      <v-icon size="64" color="grey-lighten-2">
-        mdi-file-search-outline
-      </v-icon>
+      <v-icon size="64" color="grey-lighten-2"> mdi-file-search-outline </v-icon>
       <div class="text-h6 mt-2 text-medium-emphasis">沒有找到匹配的模板</div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
-import templatesData from "@/assets/expression_templates.json";
-import type {
-  ScheduleTemplateResponse,
-  ScheduleType,
-} from "@/models/schedule_helper";
+import { ref, computed } from 'vue';
+
+import templatesData from '@/assets/expression_templates.json';
+import type { ScheduleTemplateResponse, ScheduleType } from '@/models/schedule_helper';
 
 const emit = defineEmits<{
   select: [expression: string];
@@ -102,11 +92,11 @@ const templates = ref<ScheduleTemplateResponse[]>(
   templatesData.map((t) => ({
     ...t,
     type: t.type as ScheduleType,
-  }))
+  })),
 );
 
-const selectedCategory = ref("");
-const searchKeyword = ref("");
+const selectedCategory = ref('');
+const searchKeyword = ref('');
 const selectedTemplate = ref<ScheduleTemplateResponse | null>(null);
 
 const categories = computed(() => {
@@ -125,8 +115,7 @@ const filteredTemplates = computed(() => {
     const keyword = searchKeyword.value.toLowerCase();
     result = result.filter(
       (t) =>
-        t.name.toLowerCase().includes(keyword) ||
-        t.description.toLowerCase().includes(keyword)
+        t.name.toLowerCase().includes(keyword) || t.description.toLowerCase().includes(keyword),
     );
   }
 
@@ -135,14 +124,14 @@ const filteredTemplates = computed(() => {
 
 const selectTemplate = (template: ScheduleTemplateResponse) => {
   selectedTemplate.value = template;
-  console.log("TemplateSelector: 選擇模板:", template.name);
+  console.log('TemplateSelector: 選擇模板:', template.name);
 };
 
 const useTemplate = (template: ScheduleTemplateResponse) => {
-  console.log("TemplateSelector: 使用模板表達式:", template.expression);
+  console.log('TemplateSelector: 使用模板表達式:', template.expression);
   selectedTemplate.value = template;
   // 發送選擇事件
-  emit("select", template.expression);
+  emit('select', template.expression);
 };
 </script>
 

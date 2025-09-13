@@ -60,14 +60,14 @@ export interface SchedulerStatsResponse {
 }
 
 export enum TaskState {
-  ENABLED = "ENABLED",
-  DISABLED = "DISABLED",
-  PAUSED = "PAUSED",
+  ENABLED = 'ENABLED',
+  DISABLED = 'DISABLED',
+  PAUSED = 'PAUSED',
 }
 
 export enum TargetType {
-  HTTP = "http",
-  WEBHOOK = "webhook",
-  RABBITMQ = "rabbitmq",
-  EMAIL = "email",
+  HTTP = 'http',
+  WEBHOOK = 'webhook',
+  RABBITMQ = 'rabbitmq',
+  EMAIL = 'email',
 }

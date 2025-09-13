@@ -18,8 +18,8 @@
     <!-- 任務表單 -->
     <TaskForm
       v-else-if="taskData"
-      :initial-data="formData"
       :key="formKey"
+      :initial-data="formData"
       :loading="submitting"
       @submit="handleSubmit"
       @cancel="handleCancel"
@@ -40,15 +40,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from "vue";
-import { useRouter, useRoute } from "vue-router";
-import { useSchedulerStore } from "@/stores/scheduler";
-import TaskForm from "@/components/scheduler/TaskForm.vue";
-import ScheduleWizardDialog from "@/components/schedule_helper/ScheduleWizardDialog.vue";
-import type {
-  ScheduledTaskCreate,
-  ScheduledTaskResponse,
-} from "@/models/scheduler";
+import { ref, onMounted, computed } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+
+import { useSchedulerStore } from '@/stores/scheduler';
+import TaskForm from '@/components/scheduler/TaskForm.vue';
+import ScheduleWizardDialog from '@/components/schedule_helper/ScheduleWizardDialog.vue';
+import type { ScheduledTaskCreate, ScheduledTaskResponse } from '@/models/scheduler';
 
 const router = useRouter();
 const route = useRoute();
@@ -56,7 +54,7 @@ const schedulerStore = useSchedulerStore();
 
 const loading = ref(true);
 const submitting = ref(false);
-const error = ref("");
+const error = ref('');
 const showScheduleWizard = ref(false);
 const taskData = ref<ScheduledTaskResponse | null>(null);
 const formData = ref<Partial<ScheduledTaskCreate>>({});
@@ -71,7 +69,7 @@ const taskId = computed(() => {
 onMounted(async () => {
   try {
     loading.value = true;
-    error.value = "";
+    error.value = '';
 
     const task = await schedulerStore.fetchTask(taskId.value);
     taskData.value = task;
@@ -92,8 +90,8 @@ onMounted(async () => {
 
     formKey.value++; // 觸發表單重新渲染
   } catch (err) {
-    console.error("載入任務失敗:", err);
-    error.value = "載入任務資料失敗，請稍後重試";
+    console.error('載入任務失敗:', err);
+    error.value = '載入任務資料失敗，請稍後重試';
   } finally {
     loading.value = false;
   }
@@ -103,30 +101,28 @@ const handleSubmit = async (taskUpdateData: ScheduledTaskCreate) => {
   try {
     submitting.value = true;
     await schedulerStore.updateTask(taskId.value, taskUpdateData);
-    router.push("/tasks");
+    router.push('/tasks');
   } catch (error) {
-    console.error("更新任務失敗:", error);
+    console.error('更新任務失敗:', error);
   } finally {
     submitting.value = false;
   }
 };
 
 const handleCancel = () => {
-  router.push("/tasks");
+  router.push('/tasks');
 };
 
-const handleOpenScheduleWizard = (
-  currentFormData: Partial<ScheduledTaskCreate>
-) => {
-  console.log("TaskEdit: 打開排程精靈，暫存數據:", currentFormData);
+const handleOpenScheduleWizard = (currentFormData: Partial<ScheduledTaskCreate>) => {
+  console.log('TaskEdit: 打開排程精靈，暫存數據:', currentFormData);
   // 暫存當前表單數據
   formData.value = { ...currentFormData };
   showScheduleWizard.value = true;
 };
 
 const handleExpressionCreated = (expression: string) => {
-  console.log("TaskEdit: 收到表達式:", expression);
-  console.log("TaskEdit: 當前表單數據:", formData.value);
+  console.log('TaskEdit: 收到表達式:', expression);
+  console.log('TaskEdit: 當前表單數據:', formData.value);
 
   // 將生成的表達式設置到表單數據中
   formData.value = {
@@ -140,6 +136,6 @@ const handleExpressionCreated = (expression: string) => {
   // 關閉精靈對話框
   showScheduleWizard.value = false;
 
-  console.log("TaskEdit: 更新後的表單數據:", formData.value);
+  console.log('TaskEdit: 更新後的表單數據:', formData.value);
 };
 </script>

@@ -1,12 +1,12 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import type { RouteRecordRaw } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router';
+import type { RouteRecordRaw } from 'vue-router';
 
 // 頁面組件
-import Dashboard from '@/views/Dashboard.vue'
-import TaskList from '@/views/TaskList.vue'
-import TaskCreate from '@/views/TaskCreate.vue'
-import TaskEdit from '@/views/TaskEdit.vue'
-import ScheduleHelper from '@/views/ScheduleHelper.vue'
+import Dashboard from '@/views/Dashboard.vue';
+import TaskList from '@/views/TaskList.vue';
+import TaskCreate from '@/views/TaskCreate.vue';
+import TaskEdit from '@/views/TaskEdit.vue';
+import ScheduleHelper from '@/views/ScheduleHelper.vue';
 
 const routes: RouteRecordRaw[] = [
   {
@@ -41,8 +41,8 @@ const routes: RouteRecordRaw[] = [
     name: 'TaskEdit',
     component: () => import('@/views/TaskEdit.vue'),
     meta: {
-      title: '編輯任務'
-    }
+      title: '編輯任務',
+    },
   },
   {
     path: '/schedule-helper',
@@ -61,23 +61,23 @@ const routes: RouteRecordRaw[] = [
       title: '頁面不存在',
     },
   },
-]
+];
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes,
-})
+});
 
 // 路由守衛
 router.beforeEach((to, from, next) => {
   // 設置頁面標題
   if (to.meta?.title) {
-    document.title = `${to.meta.title} - EScheduler`
+    document.title = `${to.meta.title} - EScheduler`;
   } else {
-    document.title = 'EScheduler'
+    document.title = 'EScheduler';
   }
-  
-  next()
-})
 
-export default router
+  next();
+});
+
+export default router;

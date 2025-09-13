@@ -6,12 +6,7 @@
         <p class="text-body-2 text-medium-emphasis">管理和監控您的排程任務</p>
       </v-col>
       <v-col cols="12" md="4" class="d-flex align-center justify-end">
-        <v-btn
-          color="primary"
-          prepend-icon="mdi-plus"
-          to="/tasks/create"
-          class="mr-2"
-        >
+        <v-btn color="primary" prepend-icon="mdi-plus" to="/tasks/create" class="mr-2">
           創建任務
         </v-btn>
         <v-btn icon="mdi-refresh" variant="outlined" @click="refreshTasks" />
@@ -95,12 +90,7 @@
               color="success"
               @click="triggerTask(item.id)"
             />
-            <v-btn
-              icon="mdi-pencil"
-              size="small"
-              variant="text"
-              @click="editTask(item.id)"
-            />
+            <v-btn icon="mdi-pencil" size="small" variant="text" @click="editTask(item.id)" />
             <v-btn
               icon="mdi-delete"
               size="small"
@@ -116,48 +106,45 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from "vue";
-import { useRouter } from "vue-router";
-import { useSchedulerStore } from "@/stores/scheduler";
-import {
-  ScheduledTaskResponse,
-  TaskState,
-  TaskStateUpdateRequest,
-} from "@/models/scheduler";
-import dayjs from "dayjs";
-import { id } from "vuetify/locale";
+import { ref, computed, onMounted, watch } from 'vue';
+import { useRouter } from 'vue-router';
+import dayjs from 'dayjs';
+import { id } from 'vuetify/locale';
+
+import { useSchedulerStore } from '@/stores/scheduler';
+import { ScheduledTaskResponse, TaskState, TaskStateUpdateRequest } from '@/models/scheduler';
 
 const router = useRouter();
 const schedulerStore = useSchedulerStore();
 
-const searchKeyword = ref("");
-const statusFilter = ref("");
-const typeFilter = ref("");
+const searchKeyword = ref('');
+const statusFilter = ref('');
+const typeFilter = ref('');
 
 const { loading } = schedulerStore;
 let tasks = ref<ScheduledTaskResponse[]>([]);
 
 const headers = [
-  { title: "任務名稱", key: "name", sortable: true },
-  { title: "狀態", key: "state", sortable: true },
-  { title: "類型", key: "target_type", sortable: true },
-  { title: "排程表達式", key: "schedule_expression", sortable: false },
-  { title: "下次執行", key: "next_execution_time", sortable: true },
-  { title: "執行次數", key: "execution_count", sortable: true },
-  { title: "操作", key: "actions", sortable: false, width: 120 },
+  { title: '任務名稱', key: 'name', sortable: true },
+  { title: '狀態', key: 'state', sortable: true },
+  { title: '類型', key: 'target_type', sortable: true },
+  { title: '排程表達式', key: 'schedule_expression', sortable: false },
+  { title: '下次執行', key: 'next_execution_time', sortable: true },
+  { title: '執行次數', key: 'execution_count', sortable: true },
+  { title: '操作', key: 'actions', sortable: false, width: 120 },
 ];
 
 const statusOptions = [
-  { title: "啟用", value: TaskState.ENABLED },
-  { title: "禁用", value: TaskState.DISABLED },
-  { title: "暫停", value: TaskState.PAUSED },
+  { title: '啟用', value: TaskState.ENABLED },
+  { title: '禁用', value: TaskState.DISABLED },
+  { title: '暫停', value: TaskState.PAUSED },
 ];
 
 const typeOptions = [
-  { title: "HTTP", value: "http" },
-  { title: "Webhook", value: "webhook" },
-  { title: "RabbitMQ", value: "rabbitmq" },
-  { title: "Email", value: "email" },
+  { title: 'HTTP', value: 'http' },
+  { title: 'Webhook', value: 'webhook' },
+  { title: 'RabbitMQ', value: 'rabbitmq' },
+  { title: 'Email', value: 'email' },
 ];
 
 watch(
@@ -165,7 +152,7 @@ watch(
   (newTasks) => {
     tasks.value = newTasks;
   },
-  { immediate: true }
+  { immediate: true },
 );
 const filteredTasks = computed(() => {
   let result = schedulerStore.tasks;
@@ -175,9 +162,7 @@ const filteredTasks = computed(() => {
       (task) =>
         task.name.toLowerCase().includes(searchKeyword.value.toLowerCase()) ||
         (task.description &&
-          task.description
-            .toLowerCase()
-            .includes(searchKeyword.value.toLowerCase()))
+          task.description.toLowerCase().includes(searchKeyword.value.toLowerCase())),
     );
   }
 
@@ -195,45 +180,45 @@ const filteredTasks = computed(() => {
 const getStateColor = (state: string) => {
   switch (state) {
     case TaskState.ENABLED:
-      return "success";
+      return 'success';
     case TaskState.DISABLED:
-      return "error";
+      return 'error';
     case TaskState.PAUSED:
-      return "warning";
+      return 'warning';
     default:
-      return "default";
+      return 'default';
   }
 };
 
 const getStateText = (state: string) => {
   switch (state) {
     case TaskState.ENABLED:
-      return "啟用";
+      return '啟用';
     case TaskState.DISABLED:
-      return "禁用";
+      return '禁用';
     case TaskState.PAUSED:
-      return "暫停";
+      return '暫停';
     default:
       return state;
   }
 };
 const getStateTextComputed = computed(() => {
-  return (state: String) => {
+  return (state: string) => {
     switch (state) {
       case TaskState.ENABLED:
-        return "啟用";
+        return '啟用';
       case TaskState.DISABLED:
-        return "禁用";
+        return '禁用';
       case TaskState.PAUSED:
-        return "暫停";
+        return '暫停';
       default:
-        return "禁用";
+        return '禁用';
     }
   };
 });
 
 const formatDateTime = (dateTime: string) => {
-  return dayjs(dateTime).format("YYYY-MM-DD HH:mm:ss");
+  return dayjs(dateTime).format('YYYY-MM-DD HH:mm:ss');
 };
 
 const refreshTasks = async () => {
@@ -275,7 +260,7 @@ const editTask = (id: number) => {
 
 const deleteTask = async (id: number) => {
   // 顯示確認對話框
-  if (confirm("確定要刪除這個任務嗎？")) {
+  if (confirm('確定要刪除這個任務嗎？')) {
     try {
       await schedulerStore.deleteTask(id);
       // 顯示成功消息

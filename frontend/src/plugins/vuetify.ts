@@ -1,14 +1,14 @@
-import { createVuetify } from 'vuetify'
-import * as components from 'vuetify/components'
-import * as directives from 'vuetify/directives'
-import { aliases, mdi } from 'vuetify/iconsets/mdi'
-import 'vuetify/styles'
-import '@mdi/font/css/materialdesignicons.css'
+import { createVuetify } from 'vuetify';
+import * as components from 'vuetify/components';
+import * as directives from 'vuetify/directives';
+import { aliases, mdi } from 'vuetify/iconsets/mdi';
+import 'vuetify/styles';
+import '@mdi/font/css/materialdesignicons.css';
 
 // 導入色彩配置
-import colorSchema from '@/assets/styles/color-schema.json'
+import colorSchema from '@/assets/styles/color-schema.json';
 
-const { colors } = colorSchema.theme
+const { colors } = colorSchema.theme;
 
 export default createVuetify({
   components,
@@ -57,4 +57,4 @@ export default createVuetify({
       },
     },
   },
-})
+});

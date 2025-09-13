@@ -10,7 +10,7 @@
         rows="3"
         :rules="[rules.required]"
       />
-      
+
       <v-btn
         color="primary"
         block
@@ -21,7 +21,7 @@
       >
         驗證表達式
       </v-btn>
-      
+
       <v-alert
         v-if="validationResult"
         :type="validationResult.valid ? 'success' : 'error'"
@@ -29,12 +29,8 @@
         class="mb-4"
       >
         <div v-if="validationResult.valid">
-          <div class="mb-2">
-            <strong>類型：</strong> {{ validationResult.type?.toUpperCase() }}
-          </div>
-          <div class="mb-2">
-            <strong>描述：</strong> {{ validationResult.description }}
-          </div>
+          <div class="mb-2"><strong>類型：</strong> {{ validationResult.type?.toUpperCase() }}</div>
+          <div class="mb-2"><strong>描述：</strong> {{ validationResult.description }}</div>
           <div v-if="validationResult.next_runs?.length">
             <strong>接下來的執行時間：</strong>
             <ul class="mt-1">
@@ -48,7 +44,7 @@
           {{ validationResult.error }}
         </div>
       </v-alert>
-      
+
       <!-- 常用範例 -->
       <v-expansion-panels class="mt-4">
         <v-expansion-panel>
@@ -79,38 +75,39 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
-import { useScheduleHelperStore } from '@/stores/schedule_helper'
-import type { ScheduleValidationRequest } from '@/models/schedule_helper'
+import { ref, watch } from 'vue';
+
+import { useScheduleHelperStore } from '@/stores/schedule_helper';
+import type { ScheduleValidationRequest } from '@/models/schedule_helper';
 
 const props = defineProps<{
-  initialExpression?: string
-}>()
+  initialExpression?: string;
+}>();
 
 const emit = defineEmits<{
-  validate: [request: ScheduleValidationRequest]
-}>()
+  validate: [request: ScheduleValidationRequest];
+}>();
 
-const scheduleHelperStore = useScheduleHelperStore()
-const { validationResult, loading } = scheduleHelperStore
+const scheduleHelperStore = useScheduleHelperStore();
+const { validationResult, loading } = scheduleHelperStore;
 
-const expression = ref('')
+const expression = ref('');
 
 // 監聽初始表達式
 watch(
   () => props.initialExpression,
   (newExpression) => {
     if (newExpression) {
-      expression.value = newExpression
-      validateExpression()
+      expression.value = newExpression;
+      validateExpression();
     }
   },
-  { immediate: true }
-)
+  { immediate: true },
+);
 
 const rules = {
   required: (value: string) => !!value.trim() || '請輸入表達式',
-}
+};
 
 const examples = [
   {
@@ -137,18 +134,18 @@ const examples = [
     expression: 'rate(30 seconds)',
     description: '每30秒執行一次',
   },
-]
+];
 
 const validateExpression = async () => {
   if (expression.value.trim()) {
-    const request = { expression: expression.value.trim() }
-    await scheduleHelperStore.validateExpression(request)
-    emit('validate', request)
+    const request = { expression: expression.value.trim() };
+    await scheduleHelperStore.validateExpression(request);
+    emit('validate', request);
   }
-}
+};
 
 const useExample = (exampleExpression: string) => {
-  expression.value = exampleExpression
-  validateExpression()
-}
+  expression.value = exampleExpression;
+  validateExpression();
+};
 </script>
