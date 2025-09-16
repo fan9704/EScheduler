@@ -46,6 +46,22 @@ export interface ScheduleTemplateResponse {
   category: string
 }
 
+export interface ExpressionTemplate{
+  id: number,
+  name: string,
+  type: string,
+  expression: string,
+  description: string,
+  category: string
+}
+
+export interface WebhookTemplate {
+  id: number;
+  name: string;
+  image: string;
+  body: Record<string, any>;
+}
+
 export interface CronHelpResponse {
   field: CronField
   description: string

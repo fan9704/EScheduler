@@ -12,7 +12,8 @@ import "codemirror/addon/lint/json-lint";
 import "codemirror/theme/tomorrow-night-bright.css";
 import "codemirror/addon/edit/closebrackets.js";
 import "codemirror/addon/edit/matchbrackets.js";
-
+import jsonlint from "jsonlint-mod";
+(<any>window).jsonlint = jsonlint
 
 const app = createApp(App);
 

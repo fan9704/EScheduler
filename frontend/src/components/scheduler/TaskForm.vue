@@ -87,9 +87,21 @@
               density="compact"
             />
           </v-col>
+          <v-col cols="12" md="12" v-if="formData.target_type === 'webhook'" class="pa-6">
+            <h2>選擇 Webhook Template</h2>
+            <v-item-group v-model="selectedWebhookTemplate" mandatory class="d-flex">
+              <v-item v-for="template in webhook_template" v-slot="{ isSelected, toggle }" :key="template.id" >
+                <v-card @click="toggle" class="cursor-pointer ma-2 pa-2" :class="isSelected? 'selected-card' : ''" style="flex:1;display: flex;">
+                  <v-img @click="httpBodyText = JSON.stringify(template.body); formatJSON()" :src="template.image" height="100px">
+                    {{ template.name }}
+                  </v-img>
+                </v-card>
+              </v-item>
+            </v-item-group>
+          </v-col>
           <!-- HTTP 類型時顯示 Method、Header、Body -->
-          <template v-if="formData.target_type === 'http'">
-            <v-col cols="12" md="3">
+          <template v-if="formData.target_type === 'http' || formData.target_type === 'webhook'">
+            <v-col cols="12" md="3" v-if="formData.target_type === 'http'">
               <v-select
                 v-model="httpMethod"
                 :items="httpMethodOptions"
@@ -100,7 +112,7 @@
                 required
               />
             </v-col>
-            <v-col cols="12" md="12">
+            <v-col cols="12" md="12" v-if="formData.target_type === 'http'">
               <div style="position: relative">
                 <div
                   class="font-weight-bold"
@@ -161,8 +173,10 @@
                 v-model:value="httpBodyText"
                 :options="cmOptions"
                 height="400"
+                ref="cmRef"
               >
               </Codemirror>
+              <v-btn @click="formatJSON()">Format JSON</v-btn>
             </v-col>
           </template>
           <!-- 其他類型維持原本 target_input 輸入 -->
@@ -182,7 +196,7 @@
           <v-col cols="12" md="6">
             <v-switch
               v-model="formData.state"
-              :value="TaskState.ENABLED"
+              :value="formData.state"
               :false-value="TaskState.DISABLED"
               :color="formData.state === TaskState.ENABLED ? 'success' : 'grey'"
               label="啟用任務"
@@ -203,13 +217,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick, reactive } from "vue";
+import { ref, computed, watch, nextTick, reactive, onMounted } from "vue";
 import type {
   ScheduledTaskCreate,
   ScheduledTaskResponse,
   TargetType,
 } from "@/models/scheduler";
 import { TaskState } from "@/models/scheduler";
+import { webhook_template } from "@/templates/webhook";
 const props = defineProps<{
   initialData?: ScheduledTaskResponse | Partial<ScheduledTaskCreate>;
   loading?: boolean;
@@ -224,6 +239,7 @@ const emit = defineEmits<{
 const formRef = ref();
 const targetInputText = ref("");
 const targetInputError = ref("");
+const cmRef = ref();
 const cmOptions = reactive({
   mode: "application/json",
   theme: "tomorrow-night-bright",
@@ -240,7 +256,7 @@ const httpMethod = ref("GET");
 const httpMethodOptions = ["GET", "POST", "PUT", "DELETE", "PATCH"];
 const httpHeadersText = ref("");
 const httpHeadersError = ref("");
-const httpBodyText = ref("");
+const httpBodyText = ref(JSON.stringify(props.initialData?.target_input) ||"");
 const httpBodyError = ref("");
 
 // HTTP Headers 欄位
@@ -271,6 +287,7 @@ const getHeadersObject = () => {
   return obj;
 };
 
+const selectedWebhookTemplate = ref(null);
 const formData = ref({
   name: "",
   description: "",
@@ -278,7 +295,7 @@ const formData = ref({
   timezone: "Asia/Taipei",
   target_type: "http" as TargetType,
   target_arn: "",
-  target_input: {},
+  target_input: {} as Object,
   max_retry_attempts: 3,
   state: TaskState.ENABLED,
 });
@@ -408,9 +425,25 @@ const setScheduleExpression = (expression: string) => {
     );
   });
 };
-
+const formatJSON = () =>{
+  if (!httpBodyText.value) return;
+  const parsed = JSON.parse(httpBodyText.value);
+  httpBodyText.value= JSON.stringify(parsed, null, 2);
+}
 // 🔥 暴露方法給父組件
 defineExpose({
   setScheduleExpression,
 });
+
+onMounted(() => {
+  formatJSON();
+});
 </script>
+<style scoped>
+.selected-card {
+  outline: 4px solid #1976d2;
+  outline-offset: -4px;
+  box-shadow: 0 4px 8px rgba(25, 118, 210, 0.2);
+  transition: 2ms;
+}
+</style>

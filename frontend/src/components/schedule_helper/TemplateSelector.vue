@@ -87,7 +87,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import templatesData from "@/assets/expression_templates.json";
+import { expression_template } from "@/templates/scheduler";
 import type {
   ScheduleTemplateResponse,
   ScheduleType,
@@ -99,7 +99,7 @@ const emit = defineEmits<{
 
 // 直接用本地 JSON 作為模板資料，並將 type 轉換為 ScheduleType
 const templates = ref<ScheduleTemplateResponse[]>(
-  templatesData.map((t) => ({
+  expression_template.map((t) => ({
     ...t,
     type: t.type as ScheduleType,
   }))

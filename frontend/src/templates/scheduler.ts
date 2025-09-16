@@ -1,4 +1,6 @@
-[
+import { ExpressionTemplate } from "@/models/schedule_helper"
+
+const expression_template:ExpressionTemplate[] = [
   {
     "id": 1,
     "name": "每分鐘",
@@ -136,3 +138,5 @@
     "category": "每月排程"
   }
 ]
+
+export { expression_template }
