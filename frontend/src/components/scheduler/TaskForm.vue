@@ -87,12 +87,37 @@
               density="compact"
             />
           </v-col>
-          <v-col cols="12" md="12" v-if="formData.target_type === 'webhook'" class="pa-6">
+          <v-col
+            cols="12"
+            md="12"
+            v-if="formData.target_type === 'webhook'"
+            class="pa-6"
+          >
             <h2>選擇 Webhook Template</h2>
-            <v-item-group v-model="selectedWebhookTemplate" mandatory class="d-flex">
-              <v-item v-for="template in webhook_template" v-slot="{ isSelected, toggle }" :key="template.id" >
-                <v-card @click="toggle" class="cursor-pointer ma-2 pa-2" :class="isSelected? 'selected-card' : ''" style="flex:1;display: flex;">
-                  <v-img @click="httpBodyText = JSON.stringify(template.body); formatJSON()" :src="template.image" height="100px">
+            <v-item-group
+              v-model="selectedWebhookTemplate"
+              mandatory
+              class="d-flex"
+            >
+              <v-item
+                v-for="template in webhook_template"
+                v-slot="{ isSelected, toggle }"
+                :key="template.id"
+              >
+                <v-card
+                  @click="toggle"
+                  class="cursor-pointer ma-2 pa-2"
+                  :class="isSelected ? 'selected-card' : ''"
+                  style="flex: 1; display: flex"
+                >
+                  <v-img
+                    @click="
+                      httpBodyText = JSON.stringify(template.body);
+                      formatJSON();
+                    "
+                    :src="template.image"
+                    height="100px"
+                  >
                     {{ template.name }}
                   </v-img>
                 </v-card>
@@ -100,7 +125,12 @@
             </v-item-group>
           </v-col>
           <!-- HTTP 類型時顯示 Method、Header、Body -->
-          <template v-if="formData.target_type === 'http' || formData.target_type === 'webhook'">
+          <template
+            v-if="
+              formData.target_type === 'http' ||
+              formData.target_type === 'webhook'
+            "
+          >
             <v-col cols="12" md="3" v-if="formData.target_type === 'http'">
               <v-select
                 v-model="httpMethod"
@@ -177,6 +207,34 @@
               >
               </Codemirror>
               <v-btn @click="formatJSON()">Format JSON</v-btn>
+            </v-col>
+          </template>
+          <!-- RabbitMQ 類型時顯示模式與 Body -->
+          <template v-if="formData.target_type === 'rabbitmq'">
+            <v-col cols="12" md="3">
+              <v-select
+                v-model="formData.rabbitmq_mode"
+                :items="rabbitmqModeOptions"
+                label="RabbitMQ 模式"
+                variant="outlined"
+                density="compact"
+                :rules="[rules.required]"
+                required
+              />
+            </v-col>
+            <v-col cols="12">
+              <div class="font-weight-bold" style="margin-bottom: 8px">
+                RabbitMQ Request (JSON)
+              </div>
+              <Codemirror
+                v-model:value="rabbitmqBodyText"
+                :options="cmOptions"
+                height="400"
+                @blur="formatRabbitmqBody"
+              />
+              <div v-if="rabbitmqBodyError" class="text-error mt-1">
+                {{ rabbitmqBodyError }}
+              </div>
             </v-col>
           </template>
           <!-- 其他類型維持原本 target_input 輸入 -->
@@ -256,8 +314,57 @@ const httpMethod = ref("GET");
 const httpMethodOptions = ["GET", "POST", "PUT", "DELETE", "PATCH"];
 const httpHeadersText = ref("");
 const httpHeadersError = ref("");
-const httpBodyText = ref(JSON.stringify(props.initialData?.target_input) ||"");
+const httpBodyText = ref(JSON.stringify(props.initialData?.target_input) || "");
 const httpBodyError = ref("");
+
+// RabbitMQ Body 欄位
+const rabbitmqBodyText = ref("");
+const rabbitmqBodyError = ref("");
+
+const rabbitmqModeOptions = [
+  { title: "Direct", value: "direct" },
+  { title: "Fanout", value: "fanout" },
+  { title: "Topic", value: "topic" },
+];
+
+const rabbitmqTemplates: Record<string, object> = {
+  direct: {
+    message: {
+      to: "user@example.com",
+      job: "send_email",
+    },
+    exchange: "my_direct_exchange",
+    priority: 5,
+    queue_args: {
+      "x-message-ttl": 5000,
+      "x-dead-letter-exchange": "dlx",
+    },
+    routing_key: "task",
+    exchange_type: "direct",
+  },
+  fanout: {
+    message: {
+      event: "user_signup",
+    },
+    exchange: "my_fanout_exchange",
+    queue_args: {},
+    routing_key: "",
+    exchange_type: "fanout",
+  },
+  topic: {
+    message: {
+      order_id: 123,
+    },
+    exchange: "my_topic_exchange",
+    priority: 5,
+    queue_args: {
+      "x-message-ttl": 5000,
+      "x-dead-letter-exchange": "dlx",
+    },
+    routing_key: "order.created",
+    exchange_type: "topic",
+  },
+};
 
 // HTTP Headers 欄位
 const headerRows = ref([{ key: "", value: "" }]);
@@ -298,6 +405,7 @@ const formData = ref({
   target_input: {} as Object,
   max_retry_attempts: 3,
   state: TaskState.ENABLED,
+  rabbitmq_mode: "direct", // 預設 Direct
 });
 
 const isEdit = computed(() => {
@@ -425,11 +533,16 @@ const setScheduleExpression = (expression: string) => {
     );
   });
 };
-const formatJSON = () =>{
+const formatJSON = () => {
   if (!httpBodyText.value) return;
   const parsed = JSON.parse(httpBodyText.value);
-  httpBodyText.value= JSON.stringify(parsed, null, 2);
-}
+  httpBodyText.value = JSON.stringify(parsed, null, 2);
+};
+const formatRabbitmqBody = () => {
+  if (!rabbitmqBodyText.value) return;
+  const parsed = JSON.parse(rabbitmqBodyText.value);
+  rabbitmqBodyText.value = JSON.stringify(parsed, null, 2);
+};
 // 🔥 暴露方法給父組件
 defineExpose({
   setScheduleExpression,
@@ -437,6 +550,42 @@ defineExpose({
 
 onMounted(() => {
   formatJSON();
+});
+
+watch(
+  () => formData.value.target_type,
+  (type) => {
+    if (type === "rabbitmq") {
+      formData.value.rabbitmq_mode = "direct";
+      rabbitmqBodyText.value = JSON.stringify(
+        rabbitmqTemplates["direct"],
+        null,
+        2
+      );
+      rabbitmqBodyError.value = "";
+    }
+  }
+);
+
+watch(
+  () => formData.value.rabbitmq_mode,
+  (mode) => {
+    if (formData.value.target_type === "rabbitmq" && rabbitmqTemplates[mode]) {
+      rabbitmqBodyText.value = JSON.stringify(rabbitmqTemplates[mode], null, 2);
+      rabbitmqBodyError.value = "";
+    }
+  }
+);
+
+watch(rabbitmqBodyText, (body) => {
+  if (formData.value.target_type === "rabbitmq") {
+    rabbitmqBodyError.value = "";
+    try {
+      formData.value.target_input = body ? JSON.parse(body) : {};
+    } catch (e: any) {
+      rabbitmqBodyError.value = "JSON 格式錯誤: " + e.message;
+    }
+  }
 });
 </script>
 <style scoped>
