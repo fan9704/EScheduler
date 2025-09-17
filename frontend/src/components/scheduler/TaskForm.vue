@@ -213,7 +213,7 @@
           <template v-if="formData.target_type === 'rabbitmq'">
             <v-col cols="12" md="3">
               <v-select
-                v-model="formData.rabbitmq_mode"
+                v-model="rabbitmqMode"
                 :items="rabbitmqModeOptions"
                 label="RabbitMQ 模式"
                 variant="outlined"
@@ -283,6 +283,7 @@ import type {
 } from "@/models/scheduler";
 import { TaskState } from "@/models/scheduler";
 import { webhook_template } from "@/templates/webhook";
+import { rabbitmq_templates } from "@/templates/rabbitmq";
 const props = defineProps<{
   initialData?: ScheduledTaskResponse | Partial<ScheduledTaskCreate>;
   loading?: boolean;
@@ -320,51 +321,12 @@ const httpBodyError = ref("");
 // RabbitMQ Body 欄位
 const rabbitmqBodyText = ref("");
 const rabbitmqBodyError = ref("");
-
+const rabbitmqMode = ref("direct");
 const rabbitmqModeOptions = [
   { title: "Direct", value: "direct" },
   { title: "Fanout", value: "fanout" },
   { title: "Topic", value: "topic" },
 ];
-
-const rabbitmqTemplates: Record<string, object> = {
-  direct: {
-    message: {
-      to: "user@example.com",
-      job: "send_email",
-    },
-    exchange: "my_direct_exchange",
-    priority: 5,
-    queue_args: {
-      "x-message-ttl": 5000,
-      "x-dead-letter-exchange": "dlx",
-    },
-    routing_key: "task",
-    exchange_type: "direct",
-  },
-  fanout: {
-    message: {
-      event: "user_signup",
-    },
-    exchange: "my_fanout_exchange",
-    queue_args: {},
-    routing_key: "",
-    exchange_type: "fanout",
-  },
-  topic: {
-    message: {
-      order_id: 123,
-    },
-    exchange: "my_topic_exchange",
-    priority: 5,
-    queue_args: {
-      "x-message-ttl": 5000,
-      "x-dead-letter-exchange": "dlx",
-    },
-    routing_key: "order.created",
-    exchange_type: "topic",
-  },
-};
 
 // HTTP Headers 欄位
 const headerRows = ref([{ key: "", value: "" }]);
@@ -405,7 +367,6 @@ const formData = ref({
   target_input: {} as Object,
   max_retry_attempts: 3,
   state: TaskState.ENABLED,
-  rabbitmq_mode: "direct", // 預設 Direct
 });
 
 const isEdit = computed(() => {
@@ -556,9 +517,9 @@ watch(
   () => formData.value.target_type,
   (type) => {
     if (type === "rabbitmq") {
-      formData.value.rabbitmq_mode = "direct";
+      rabbitmqMode.value = "direct";
       rabbitmqBodyText.value = JSON.stringify(
-        rabbitmqTemplates["direct"],
+        rabbitmq_templates["direct"],
         null,
         2
       );
@@ -567,21 +528,21 @@ watch(
   }
 );
 
-watch(
-  () => formData.value.rabbitmq_mode,
-  (mode) => {
-    if (formData.value.target_type === "rabbitmq" && rabbitmqTemplates[mode]) {
-      rabbitmqBodyText.value = JSON.stringify(rabbitmqTemplates[mode], null, 2);
-      rabbitmqBodyError.value = "";
-    }
-  }
-);
-
-watch(rabbitmqBodyText, (body) => {
-  if (formData.value.target_type === "rabbitmq") {
+watch(rabbitmqMode, (mode) => {
+  if (formData.value.target_type === "rabbitmq" && rabbitmq_templates[mode]) {
+    rabbitmqBodyText.value = JSON.stringify(rabbitmq_templates[mode], null, 2);
     rabbitmqBodyError.value = "";
+  }
+});
+
+watch([rabbitmqMode, rabbitmqBodyText], ([mode, body]) => {
+  if (formData.value.target_type === "rabbitmq") {
     try {
-      formData.value.target_input = body ? JSON.parse(body) : {};
+      formData.value.target_input = {
+        ...JSON.parse(body),
+        exchange_type: mode,
+      };
+      rabbitmqBodyError.value = "";
     } catch (e: any) {
       rabbitmqBodyError.value = "JSON 格式錯誤: " + e.message;
     }
