@@ -128,7 +128,8 @@
           <template
             v-if="
               formData.target_type === 'http' ||
-              formData.target_type === 'webhook'
+              formData.target_type === 'webhook' ||
+              formData.target_type === 'rabbitmq'
             "
           >
             <v-col cols="12" md="3" v-if="formData.target_type === 'http'">
@@ -136,6 +137,17 @@
                 v-model="httpMethod"
                 :items="httpMethodOptions"
                 label="HTTP Method"
+                variant="outlined"
+                density="compact"
+                :rules="[rules.required]"
+                required
+              />
+            </v-col>
+            <v-col cols="12" md="3" v-if="formData.target_type === 'rabbitmq'">
+              <v-select
+                v-model="rabbitmqMode"
+                :items="rabbitmqModeOptions"
+                label="RabbitMQ 模式"
                 variant="outlined"
                 density="compact"
                 :rules="[rules.required]"
@@ -209,34 +221,7 @@
               <v-btn @click="formatJSON()">Format JSON</v-btn>
             </v-col>
           </template>
-          <!-- RabbitMQ 類型時顯示模式與 Body -->
-          <template v-if="formData.target_type === 'rabbitmq'">
-            <v-col cols="12" md="3">
-              <v-select
-                v-model="rabbitmqMode"
-                :items="rabbitmqModeOptions"
-                label="RabbitMQ 模式"
-                variant="outlined"
-                density="compact"
-                :rules="[rules.required]"
-                required
-              />
-            </v-col>
-            <v-col cols="12">
-              <div class="font-weight-bold" style="margin-bottom: 8px">
-                RabbitMQ Request (JSON)
-              </div>
-              <Codemirror
-                v-model:value="rabbitmqBodyText"
-                :options="cmOptions"
-                height="400"
-                @blur="formatRabbitmqBody"
-              />
-              <div v-if="rabbitmqBodyError" class="text-error mt-1">
-                {{ rabbitmqBodyError }}
-              </div>
-            </v-col>
-          </template>
+
           <!-- 其他類型維持原本 target_input 輸入 -->
           <template v-else>
             <v-col cols="12">
@@ -318,9 +303,7 @@ const httpHeadersError = ref("");
 const httpBodyText = ref(JSON.stringify(props.initialData?.target_input) || "");
 const httpBodyError = ref("");
 
-// RabbitMQ Body 欄位
-const rabbitmqBodyText = ref("");
-const rabbitmqBodyError = ref("");
+// RabbitMQ 欄位
 const rabbitmqMode = ref("direct");
 const rabbitmqModeOptions = [
   { title: "Direct", value: "direct" },
@@ -428,19 +411,28 @@ watch(
 
 // 監聽 HTTP 欄位變化
 watch(
-  [httpMethod, headerRows, httpBodyText],
-  ([method, headers, body]) => {
+  [httpMethod, headerRows, httpBodyText, rabbitmqMode],
+  ([method, headers, body, mode]) => {
+    let bodyObj = {};
+    if (body.trim()) {
+      try {
+        bodyObj = JSON.parse(body);
+      } catch (e) {}
+    }
     if (formData.value.target_type === "http") {
-      let bodyObj = {};
-      if (body.trim()) {
-        try {
-          bodyObj = JSON.parse(body);
-        } catch (e) {}
-      }
       formData.value.target_input = {
         method,
         headers: getHeadersObject(),
         body: bodyObj,
+      };
+    } else if (formData.value.target_type === "webhook") {
+      formData.value.target_input = {
+        body: bodyObj,
+      };
+    } else if (formData.value.target_type === "rabbitmq") {
+      formData.value.target_input = {
+        body: bodyObj,
+        exchange_type: mode,
       };
     }
   },
@@ -499,11 +491,7 @@ const formatJSON = () => {
   const parsed = JSON.parse(httpBodyText.value);
   httpBodyText.value = JSON.stringify(parsed, null, 2);
 };
-const formatRabbitmqBody = () => {
-  if (!rabbitmqBodyText.value) return;
-  const parsed = JSON.parse(rabbitmqBodyText.value);
-  rabbitmqBodyText.value = JSON.stringify(parsed, null, 2);
-};
+
 // 🔥 暴露方法給父組件
 defineExpose({
   setScheduleExpression,
@@ -518,34 +506,20 @@ watch(
   (type) => {
     if (type === "rabbitmq") {
       rabbitmqMode.value = "direct";
-      rabbitmqBodyText.value = JSON.stringify(
+      httpBodyText.value = JSON.stringify(
         rabbitmq_templates["direct"],
         null,
         2
       );
-      rabbitmqBodyError.value = "";
+      httpBodyError.value = "";
     }
   }
 );
 
 watch(rabbitmqMode, (mode) => {
   if (formData.value.target_type === "rabbitmq" && rabbitmq_templates[mode]) {
-    rabbitmqBodyText.value = JSON.stringify(rabbitmq_templates[mode], null, 2);
-    rabbitmqBodyError.value = "";
-  }
-});
-
-watch([rabbitmqMode, rabbitmqBodyText], ([mode, body]) => {
-  if (formData.value.target_type === "rabbitmq") {
-    try {
-      formData.value.target_input = {
-        ...JSON.parse(body),
-        exchange_type: mode,
-      };
-      rabbitmqBodyError.value = "";
-    } catch (e: any) {
-      rabbitmqBodyError.value = "JSON 格式錯誤: " + e.message;
-    }
+    httpBodyText.value = JSON.stringify(rabbitmq_templates[mode], null, 2);
+    httpBodyError.value = "";
   }
 });
 </script>
