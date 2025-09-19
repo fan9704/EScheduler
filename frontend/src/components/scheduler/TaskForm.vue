@@ -431,8 +431,7 @@ watch(
       };
     } else if (formData.value.target_type === "rabbitmq") {
       formData.value.target_input = {
-        body: bodyObj,
-        exchange_type: mode,
+        ...bodyObj,
       };
     }
   },
