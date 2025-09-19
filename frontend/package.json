@@ -1,40 +1,41 @@
 {
-  "name": "escheduler-frontend",
-  "version": "1.0.0",
-  "description": "EScheduler 前端管理界面",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vue-tsc && vite build",
-    "preview": "vite preview",
-    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
-    "format": "prettier --write src/",
-    "type-check": "vue-tsc --noEmit"
-  },
-  "dependencies": {
-    "@mdi/font": "^7.3.67",
-    "axios": "^1.6.0",
-    "codemirror": "^5.65.20",
-    "codemirror-editor-vue3": "^2.8.0",
-    "dayjs": "^1.11.10",
-    "jsonlint-mod": "^1.7.6",
-    "pinia": "^2.1.7",
-    "vue": "^3.4.0",
-    "vue-i18n": "^9.8.0",
-    "vue-router": "^4.2.5",
-    "vuetify": "^3.4.0"
-  },
-  "devDependencies": {
-    "@types/codemirror": "^5.60.16",
-    "@types/node": "^20.10.0",
-    "@vitejs/plugin-vue": "^4.5.0",
-    "@vue/eslint-config-prettier": "^8.0.0",
-    "@vue/eslint-config-typescript": "^12.0.0",
-    "eslint": "^8.55.0",
-    "eslint-plugin-vue": "^9.19.0",
-    "prettier": "^3.1.0",
-    "typescript": "^5.3.0",
-    "vite": "^5.0.0",
-    "vue-tsc": "^1.8.25"
-  }
+	"name": "escheduler-frontend",
+	"version": "1.0.0",
+	"description": "EScheduler 前端管理界面",
+	"type": "module",
+	"scripts": {
+		"dev": "vite",
+		"build": "vue-tsc && vite build",
+		"preview": "vite preview",
+		"lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
+		"format": "prettier --write src/",
+		"type-check": "vue-tsc --noEmit"
+	},
+	"dependencies": {
+		"@mdi/font": "^7.3.67",
+		"axios": "^1.6.0",
+		"codemirror": "^5.65.20",
+		"codemirror-editor-vue3": "^2.8.0",
+		"dayjs": "^1.11.10",
+		"jsonlint-mod": "^1.7.6",
+		"pinia": "^2.1.7",
+		"vue": "^3.4.0",
+		"vue-i18n": "^9.8.0",
+		"vue-router": "^4.2.5",
+		"vuetify": "^3.4.0"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.2.4",
+		"@types/codemirror": "^5.60.16",
+		"@types/node": "^20.10.0",
+		"@vitejs/plugin-vue": "^4.5.0",
+		"@vue/eslint-config-prettier": "^8.0.0",
+		"@vue/eslint-config-typescript": "^12.0.0",
+		"eslint": "^8.55.0",
+		"eslint-plugin-vue": "^9.19.0",
+		"prettier": "^3.1.0",
+		"typescript": "^5.3.0",
+		"vite": "^5.0.0",
+		"vue-tsc": "^1.8.25"
+	}
 }

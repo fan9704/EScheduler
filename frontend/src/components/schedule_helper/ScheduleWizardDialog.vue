@@ -171,86 +171,98 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useScheduleHelperStore } from '@/stores/schedule_helper'
-import TemplateSelector from './TemplateSelector.vue'
-import RateEditor from './RateEditor.vue'
-import CronEditor from './CronEditor.vue'
-import ExpressionValidator from './ExpressionValidator.vue'
+import { ref } from "vue";
 import type {
-  RateExpressionRequest,
-  CronExpressionRequest,
-  ScheduleValidationRequest,
-} from '@/models/schedule_helper'
+	CronExpressionRequest,
+	RateExpressionRequest,
+	ScheduleValidationRequest,
+} from "@/models/schedule_helper";
+import { useScheduleHelperStore } from "@/stores/schedule_helper";
+import CronEditor from "./CronEditor.vue";
+import ExpressionValidator from "./ExpressionValidator.vue";
+import RateEditor from "./RateEditor.vue";
+import TemplateSelector from "./TemplateSelector.vue";
 
 defineProps<{
-  modelValue: boolean
-}>()
+	modelValue: boolean;
+}>();
 
 const emit = defineEmits<{
-  'update:modelValue': [value: boolean]
-  'expression-created': [expression: string]
-}>()
+	"update:modelValue": [value: boolean];
+	"expression-created": [expression: string];
+}>();
 
 // 直接使用 Store 實例，不要解構
-const scheduleHelperStore = useScheduleHelperStore()
+const scheduleHelperStore = useScheduleHelperStore();
 
-const activeTab = ref('template')
+const activeTab = ref("template");
 
 const handleTemplateSelect = async (expression: string) => {
-  console.log('ScheduleWizardDialog: 模板選擇:', expression)
-  try {
-    await scheduleHelperStore.validateExpression({ expression })
-    console.log('ScheduleWizardDialog: 模板驗證成功')
-  } catch (error) {
-    console.error('ScheduleWizardDialog: 模板驗證失敗:', error)
-  }
-}
+	console.log("ScheduleWizardDialog: 模板選擇:", expression);
+	try {
+		await scheduleHelperStore.validateExpression({ expression });
+		console.log("ScheduleWizardDialog: 模板驗證成功");
+	} catch (error) {
+		console.error("ScheduleWizardDialog: 模板驗證失敗:", error);
+	}
+};
 
 const handleRateGenerate = async (request: RateExpressionRequest) => {
-  console.log('ScheduleWizardDialog: 生成 Rate 表達式:', request)
-  try {
-    await scheduleHelperStore.generateRateExpression(request)
-    console.log('ScheduleWizardDialog: Rate 表達式生成成功，當前表達式:', scheduleHelperStore.currentExpression)
-  } catch (error) {
-    console.error('ScheduleWizardDialog: 生成 Rate 表達式失敗:', error)
-  }
-}
+	console.log("ScheduleWizardDialog: 生成 Rate 表達式:", request);
+	try {
+		await scheduleHelperStore.generateRateExpression(request);
+		console.log(
+			"ScheduleWizardDialog: Rate 表達式生成成功，當前表達式:",
+			scheduleHelperStore.currentExpression,
+		);
+	} catch (error) {
+		console.error("ScheduleWizardDialog: 生成 Rate 表達式失敗:", error);
+	}
+};
 
 const handleCronGenerate = async (request: CronExpressionRequest) => {
-  console.log('ScheduleWizardDialog: 生成 Cron 表達式:', request)
-  try {
-    await scheduleHelperStore.generateCronExpression(request)
-    console.log('ScheduleWizardDialog: Cron 表達式生成成功，當前表達式:', scheduleHelperStore.currentExpression)
-  } catch (error) {
-    console.error('ScheduleWizardDialog: 生成 Cron 表達式失敗:', error)
-  }
-}
+	console.log("ScheduleWizardDialog: 生成 Cron 表達式:", request);
+	try {
+		await scheduleHelperStore.generateCronExpression(request);
+		console.log(
+			"ScheduleWizardDialog: Cron 表達式生成成功，當前表達式:",
+			scheduleHelperStore.currentExpression,
+		);
+	} catch (error) {
+		console.error("ScheduleWizardDialog: 生成 Cron 表達式失敗:", error);
+	}
+};
 
 const handleValidate = async (request: ScheduleValidationRequest) => {
-  console.log('ScheduleWizardDialog: 驗證表達式:', request)
-  try {
-    await scheduleHelperStore.validateExpression(request)
-    console.log('ScheduleWizardDialog: 表達式驗證成功')
-  } catch (error) {
-    console.error('ScheduleWizardDialog: 驗證表達式失敗:', error)
-  }
-}
+	console.log("ScheduleWizardDialog: 驗證表達式:", request);
+	try {
+		await scheduleHelperStore.validateExpression(request);
+		console.log("ScheduleWizardDialog: 表達式驗證成功");
+	} catch (error) {
+		console.error("ScheduleWizardDialog: 驗證表達式失敗:", error);
+	}
+};
 
 const useExpression = () => {
-  if (scheduleHelperStore.currentExpression) {
-    console.log('ScheduleWizardDialog: 發送表達式事件:', scheduleHelperStore.currentExpression.expression)
-    emit('expression-created', scheduleHelperStore.currentExpression.expression)
-  } else {
-    console.warn('ScheduleWizardDialog: 沒有可用的表達式')
-  }
-}
+	if (scheduleHelperStore.currentExpression) {
+		console.log(
+			"ScheduleWizardDialog: 發送表達式事件:",
+			scheduleHelperStore.currentExpression.expression,
+		);
+		emit(
+			"expression-created",
+			scheduleHelperStore.currentExpression.expression,
+		);
+	} else {
+		console.warn("ScheduleWizardDialog: 沒有可用的表達式");
+	}
+};
 
 const closeDialog = () => {
-  console.log('ScheduleWizardDialog: 關閉對話框')
-  emit('update:modelValue', false)
-  // 清除當前表達式和錯誤
-  scheduleHelperStore.clearCurrentExpression()
-  scheduleHelperStore.clearError()
-}
+	console.log("ScheduleWizardDialog: 關閉對話框");
+	emit("update:modelValue", false);
+	// 清除當前表達式和錯誤
+	scheduleHelperStore.clearCurrentExpression();
+	scheduleHelperStore.clearError();
+};
 </script>

@@ -13,9 +13,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import AppSidebar from './AppSidebar.vue'
-import AppHeader from './AppHeader.vue'
+import { ref } from "vue";
+import AppHeader from "./AppHeader.vue";
+import AppSidebar from "./AppSidebar.vue";
 
-const drawer = ref(true)
+const drawer = ref(true);
 </script>
