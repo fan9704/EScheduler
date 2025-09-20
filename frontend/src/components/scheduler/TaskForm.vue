@@ -304,7 +304,7 @@ const httpBodyText = ref(JSON.stringify(props.initialData?.target_input) || "");
 const httpBodyError = ref("");
 
 // RabbitMQ 欄位
-const rabbitmqMode = ref("direct");
+const rabbitmqMode = ref("");
 const rabbitmqModeOptions = [
   { title: "Direct", value: "direct" },
   { title: "Fanout", value: "fanout" },
@@ -395,6 +395,21 @@ watch(
           httpBodyText.value = newData.target_input?.body
             ? JSON.stringify(newData.target_input.body, null, 2)
             : "";
+        }
+        // RabbitMQ 類型時處理模式和內容
+        else if (
+          formData.value.target_type === "rabbitmq" &&
+          newData.target_input
+        ) {
+          const exchangeType = newData.target_input.exchange_type;
+          if (
+            exchangeType &&
+            ["direct", "fanout", "topic"].includes(exchangeType)
+          ) {
+            rabbitmqMode.value = exchangeType;
+          }
+          const { exchange_type, ...otherInput } = newData.target_input;
+          httpBodyText.value = JSON.stringify(otherInput, null, 2);
         } else {
           targetInputText.value = JSON.stringify(
             newData.target_input || {},
@@ -490,7 +505,18 @@ const formatJSON = () => {
   const parsed = JSON.parse(httpBodyText.value);
   httpBodyText.value = JSON.stringify(parsed, null, 2);
 };
-
+watch(rabbitmqMode, (mode) => {
+  // 只在新增模式且有選擇模式時才載入模板
+  if (
+    formData.value.target_type === "rabbitmq" &&
+    rabbitmq_templates[mode] &&
+    !isEdit.value &&
+    mode // 確保有選擇模式
+  ) {
+    httpBodyText.value = JSON.stringify(rabbitmq_templates[mode], null, 2);
+    httpBodyError.value = "";
+  }
+});
 // 🔥 暴露方法給父組件
 defineExpose({
   setScheduleExpression,
@@ -498,28 +524,6 @@ defineExpose({
 
 onMounted(() => {
   formatJSON();
-});
-
-watch(
-  () => formData.value.target_type,
-  (type) => {
-    if (type === "rabbitmq") {
-      rabbitmqMode.value = "direct";
-      httpBodyText.value = JSON.stringify(
-        rabbitmq_templates["direct"],
-        null,
-        2
-      );
-      httpBodyError.value = "";
-    }
-  }
-);
-
-watch(rabbitmqMode, (mode) => {
-  if (formData.value.target_type === "rabbitmq" && rabbitmq_templates[mode]) {
-    httpBodyText.value = JSON.stringify(rabbitmq_templates[mode], null, 2);
-    httpBodyError.value = "";
-  }
 });
 </script>
 <style scoped>
