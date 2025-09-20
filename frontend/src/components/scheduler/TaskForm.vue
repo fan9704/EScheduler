@@ -87,12 +87,37 @@
               density="compact"
             />
           </v-col>
-          <v-col cols="12" md="12" v-if="formData.target_type === 'webhook'" class="pa-6">
+          <v-col
+            cols="12"
+            md="12"
+            v-if="formData.target_type === 'webhook'"
+            class="pa-6"
+          >
             <h2>選擇 Webhook Template</h2>
-            <v-item-group v-model="selectedWebhookTemplate" mandatory class="d-flex">
-              <v-item v-for="template in webhook_template" v-slot="{ isSelected, toggle }" :key="template.id" >
-                <v-card @click="toggle" class="cursor-pointer ma-2 pa-2" :class="isSelected? 'selected-card' : ''" style="flex:1;display: flex;">
-                  <v-img @click="httpBodyText = JSON.stringify(template.body); formatJSON()" :src="template.image" height="100px">
+            <v-item-group
+              v-model="selectedWebhookTemplate"
+              mandatory
+              class="d-flex"
+            >
+              <v-item
+                v-for="template in webhook_template"
+                v-slot="{ isSelected, toggle }"
+                :key="template.id"
+              >
+                <v-card
+                  @click="toggle"
+                  class="cursor-pointer ma-2 pa-2"
+                  :class="isSelected ? 'selected-card' : ''"
+                  style="flex: 1; display: flex"
+                >
+                  <v-img
+                    @click="
+                      httpBodyText = JSON.stringify(template.body);
+                      formatJSON();
+                    "
+                    :src="template.image"
+                    height="100px"
+                  >
                     {{ template.name }}
                   </v-img>
                 </v-card>
@@ -100,12 +125,30 @@
             </v-item-group>
           </v-col>
           <!-- HTTP 類型時顯示 Method、Header、Body -->
-          <template v-if="formData.target_type === 'http' || formData.target_type === 'webhook'">
+          <template
+            v-if="
+              formData.target_type === 'http' ||
+              formData.target_type === 'webhook' ||
+              formData.target_type === 'rabbitmq'
+            "
+          >
             <v-col cols="12" md="3" v-if="formData.target_type === 'http'">
               <v-select
                 v-model="httpMethod"
                 :items="httpMethodOptions"
                 label="HTTP Method"
+                variant="outlined"
+                density="compact"
+                :rules="[rules.required]"
+                required
+              />
+            </v-col>
+            <v-col cols="12" md="3" v-if="formData.target_type === 'rabbitmq'">
+              <v-select
+                v-model="rabbitmqMode"
+                :items="rabbitmqModeOptions"
+                label="RabbitMQ 模式"
+                placeholder="請選擇模式"
                 variant="outlined"
                 density="compact"
                 :rules="[rules.required]"
@@ -179,6 +222,7 @@
               <v-btn @click="formatJSON()">Format JSON</v-btn>
             </v-col>
           </template>
+
           <!-- 其他類型維持原本 target_input 輸入 -->
           <template v-else>
             <v-col cols="12">
@@ -219,22 +263,23 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, reactive, ref, watch } from "vue";
 import type {
-	ScheduledTaskCreate,
-	ScheduledTaskResponse,
-	TargetType,
+  ScheduledTaskCreate,
+  ScheduledTaskResponse,
+  TargetType,
 } from "@/models/scheduler";
 import { TaskState } from "@/models/scheduler";
 import { webhook_template } from "@/templates/webhook";
+import { rabbitmq_templates } from "@/templates/rabbitmq";
 
 const props = defineProps<{
-	initialData?: ScheduledTaskResponse | Partial<ScheduledTaskCreate>;
-	loading?: boolean;
+  initialData?: ScheduledTaskResponse | Partial<ScheduledTaskCreate>;
+  loading?: boolean;
 }>();
 
 const emit = defineEmits<{
-	submit: [data: ScheduledTaskCreate];
-	cancel: [];
-	"open-schedule-wizard": [formData: Partial<ScheduledTaskCreate>];
+  submit: [data: ScheduledTaskCreate];
+  cancel: [];
+  "open-schedule-wizard": [formData: Partial<ScheduledTaskCreate>];
 }>();
 
 const formRef = ref();
@@ -242,14 +287,14 @@ const targetInputText = ref("");
 const targetInputError = ref("");
 const cmRef = ref();
 const cmOptions = reactive({
-	mode: "application/json",
-	theme: "tomorrow-night-bright",
-	lineNumbers: true,
-	lineWiseCopyCut: true,
-	gutters: ["CodeMirror-lint-markers"],
-	autoCloseBrackets: true,
-	matchBrackets: true,
-	lint: true,
+  mode: "application/json",
+  theme: "tomorrow-night-bright",
+  lineNumbers: true,
+  lineWiseCopyCut: true,
+  gutters: ["CodeMirror-lint-markers"],
+  autoCloseBrackets: true,
+  matchBrackets: true,
+  lint: true,
 });
 
 // HTTP Method 欄位
@@ -260,184 +305,228 @@ const httpHeadersError = ref("");
 const httpBodyText = ref(JSON.stringify(props.initialData?.target_input) || "");
 const httpBodyError = ref("");
 
+// RabbitMQ 欄位
+const rabbitmqMode = ref("");
+const rabbitmqModeOptions = [
+  { title: "Direct", value: "direct" },
+  { title: "Fanout", value: "fanout" },
+  { title: "Topic", value: "topic" },
+];
+
 // HTTP Headers 欄位
 const headerRows = ref([{ key: "", value: "" }]);
 const commonHeaders = [
-	"Authorization",
-	"Host",
-	"Accept-Language",
-	"Accept-Encoding",
-	"Cookie",
-	"Cache-Control",
-	"Content-Length",
-	"Content-Type",
-	"Accept",
-	"Referer",
-	"User-Agent",
-	"WWW-Authenticate",
-	"Proxy-Authenticate",
-	"Proxy-Authorization",
-	"Age",
+  "Authorization",
+  "Host",
+  "Accept-Language",
+  "Accept-Encoding",
+  "Cookie",
+  "Cache-Control",
+  "Content-Length",
+  "Content-Type",
+  "Accept",
+  "Referer",
+  "User-Agent",
+  "WWW-Authenticate",
+  "Proxy-Authenticate",
+  "Proxy-Authorization",
+  "Age",
 ];
 // 組合 headers 物件
 const getHeadersObject = () => {
-	const obj: Record<string, string> = {};
-	headerRows.value.forEach((row) => {
-		if (row.key) obj[row.key] = row.value;
-	});
-	return obj;
+  const obj: Record<string, string> = {};
+  headerRows.value.forEach((row) => {
+    if (row.key) obj[row.key] = row.value;
+  });
+  return obj;
 };
 
 const selectedWebhookTemplate = ref(null);
 const formData = ref({
-	name: "",
-	description: "",
-	schedule_expression: "",
-	timezone: "Asia/Taipei",
-	target_type: "http" as TargetType,
-	target_arn: "",
-	target_input: {} as Object,
-	max_retry_attempts: 3,
-	state: TaskState.ENABLED,
+  name: "",
+  description: "",
+  schedule_expression: "",
+  timezone: "Asia/Taipei",
+  target_type: "http" as TargetType,
+  target_arn: "",
+  target_input: {} as Object,
+  max_retry_attempts: 3,
+  state: TaskState.ENABLED,
 });
 
 const isEdit = computed(() => {
-	return !!(props.initialData && "id" in props.initialData);
+  return !!(props.initialData && "id" in props.initialData);
 });
 
 const targetTypeOptions = [
-	{ title: "HTTP", value: "http" },
-	{ title: "Webhook", value: "webhook" },
-	{ title: "RabbitMQ", value: "rabbitmq" },
-	{ title: "Email", value: "email" },
+  { title: "HTTP", value: "http" },
+  { title: "Webhook", value: "webhook" },
+  { title: "RabbitMQ", value: "rabbitmq" },
+  { title: "Email", value: "email" },
 ];
 
 const rules = {
-	required: (value: any) => !!value || "此欄位為必填",
+  required: (value: any) => !!value || "此欄位為必填",
 };
 
 // 監聽初始數據變化
 watch(
-	() => props.initialData,
-	(newData) => {
-		console.log("TaskForm 收到新的 initialData:", newData);
-		if (newData) {
-			nextTick(() => {
-				formData.value = {
-					name: newData.name || "",
-					description: newData.description || "",
-					schedule_expression: newData.schedule_expression || "",
-					timezone: newData.timezone || "Asia/Taipei",
-					target_type: (newData.target_type as TargetType) || "http",
-					target_arn: newData.target_arn || "",
-					target_input: newData.target_input || {},
-					max_retry_attempts: newData.max_retry_attempts || 3,
-					state:
-						newData.state !== undefined ? newData.state : TaskState.ENABLED,
-				};
-				// HTTP 類型時分解 method/headers/body
-				if (formData.value.target_type === "http") {
-					httpMethod.value = newData.target_input?.method || "GET";
-					httpHeadersText.value = newData.target_input?.headers
-						? JSON.stringify(newData.target_input.headers, null, 2)
-						: "";
-					httpBodyText.value = newData.target_input?.body
-						? JSON.stringify(newData.target_input.body, null, 2)
-						: "";
-				} else {
-					targetInputText.value = JSON.stringify(
-						newData.target_input || {},
-						null,
-						2,
-					);
-				}
-				console.log("TaskForm 更新後的 formData:", formData.value);
-			});
-		}
-	},
-	{ immediate: true, deep: true },
+  () => props.initialData,
+  (newData) => {
+    console.log("TaskForm 收到新的 initialData:", newData);
+    if (newData) {
+      nextTick(() => {
+        formData.value = {
+          name: newData.name || "",
+          description: newData.description || "",
+          schedule_expression: newData.schedule_expression || "",
+          timezone: newData.timezone || "Asia/Taipei",
+          target_type: (newData.target_type as TargetType) || "http",
+          target_arn: newData.target_arn || "",
+          target_input: newData.target_input || {},
+          max_retry_attempts: newData.max_retry_attempts || 3,
+          state:
+            newData.state !== undefined ? newData.state : TaskState.ENABLED,
+        };
+        // HTTP 類型時分解 method/headers/body
+        if (formData.value.target_type === "http") {
+          httpMethod.value = newData.target_input?.method || "GET";
+          httpHeadersText.value = newData.target_input?.headers
+            ? JSON.stringify(newData.target_input.headers, null, 2)
+            : "";
+          httpBodyText.value = newData.target_input?.body
+            ? JSON.stringify(newData.target_input.body, null, 2)
+            : "";
+        }
+        // RabbitMQ 類型時處理模式和內容
+        else if (
+          formData.value.target_type === "rabbitmq" &&
+          newData.target_input
+        ) {
+          const exchangeType = newData.target_input.exchange_type;
+          if (
+            exchangeType &&
+            ["direct", "fanout", "topic"].includes(exchangeType)
+          ) {
+            rabbitmqMode.value = exchangeType;
+          }
+          const { exchange_type, ...otherInput } = newData.target_input;
+          httpBodyText.value = JSON.stringify(otherInput, null, 2);
+        } else {
+          targetInputText.value = JSON.stringify(
+            newData.target_input || {},
+            null,
+            2
+          );
+        }
+        console.log("TaskForm 更新後的 formData:", formData.value);
+      });
+    }
+  },
+  { immediate: true, deep: true }
 );
 
 // 監聽 HTTP 欄位變化
 watch(
-	[httpMethod, headerRows, httpBodyText],
-	([method, _, body]) => {
-		if (formData.value.target_type === "http") {
-			let bodyObj = {};
-			if (body.trim()) {
-				try {
-					bodyObj = JSON.parse(body);
-				} catch (e) {}
-			}
-			formData.value.target_input = {
-				method,
-				headers: getHeadersObject(),
-				body: bodyObj,
-			};
-		}
-	},
-	{ deep: true },
+  [httpMethod, headerRows, httpBodyText, rabbitmqMode],
+  ([method, headers, body, mode]) => {
+    let bodyObj = {};
+    if (body.trim()) {
+      try {
+        bodyObj = JSON.parse(body);
+      } catch (e) {}
+    }
+    if (formData.value.target_type === "http") {
+      formData.value.target_input = {
+        method,
+        headers: getHeadersObject(),
+        body: bodyObj,
+      };
+    } else if (formData.value.target_type === "webhook") {
+      formData.value.target_input = {
+        body: bodyObj,
+      };
+    } else if (formData.value.target_type === "rabbitmq") {
+      formData.value.target_input = {
+        ...bodyObj,
+      };
+    }
+  },
+  { deep: true }
 );
 
 // 監聽 target_input 變化 (非 HTTP 類型)
 watch(targetInputText, (newValue) => {
-	if (formData.value.target_type !== "http") {
-		targetInputError.value = "";
-		try {
-			formData.value.target_input = newValue ? JSON.parse(newValue) : {};
-		} catch (error: any) {
-			targetInputError.value = `JSON·格式錯誤:·${error.message}`;
-		}
-	}
+  if (formData.value.target_type !== "http") {
+    targetInputError.value = "";
+    try {
+      formData.value.target_input = newValue ? JSON.parse(newValue) : {};
+    } catch (error: any) {
+      targetInputError.value = `JSON·格式錯誤:·${error.message}`;
+    }
+  }
 });
 
 const openScheduleWizard = () => {
-	console.log("TaskForm 點擊排程精靈按鈕，當前數據:", formData.value);
-	emit("open-schedule-wizard", { ...formData.value });
+  console.log("TaskForm 點擊排程精靈按鈕，當前數據:", formData.value);
+  emit("open-schedule-wizard", { ...formData.value });
 };
 
 const handleSubmit = async () => {
-	const { valid } = await formRef.value.validate();
-	// 檢查 JSON 欄位錯誤
-	if (formData.value.target_type === "http") {
-		if (httpHeadersError.value || httpBodyError.value) return;
-	} else {
-		if (targetInputError.value) return;
-	}
-	if (valid) {
-		const payload = {
-			...formData.value,
-		};
-		console.log("TaskForm 提交數據:", payload);
-		emit("submit", payload);
-	}
+  const { valid } = await formRef.value.validate();
+  // 檢查 JSON 欄位錯誤
+  if (formData.value.target_type === "http") {
+    if (httpHeadersError.value || httpBodyError.value) return;
+  } else {
+    if (targetInputError.value) return;
+  }
+  if (valid) {
+    const payload = {
+      ...formData.value,
+    };
+    console.log("TaskForm 提交數據:", payload);
+    emit("submit", payload);
+  }
 };
 
 // 🔥 新增：設置排程表達式的方法
 const setScheduleExpression = (expression: string) => {
-	console.log("TaskForm.setScheduleExpression 被調用，表達式:", expression);
-	formData.value.schedule_expression = expression;
+  console.log("TaskForm.setScheduleExpression 被調用，表達式:", expression);
+  formData.value.schedule_expression = expression;
 
-	// 使用 nextTick 確保 DOM 更新
-	nextTick(() => {
-		console.log(
-			"TaskForm.setScheduleExpression 完成，當前 formData:",
-			formData.value,
-		);
-	});
+  // 使用 nextTick 確保 DOM 更新
+  nextTick(() => {
+    console.log(
+      "TaskForm.setScheduleExpression 完成，當前 formData:",
+      formData.value
+    );
+  });
 };
 const formatJSON = () => {
-	if (!httpBodyText.value) return;
-	const parsed = JSON.parse(httpBodyText.value);
-	httpBodyText.value = JSON.stringify(parsed, null, 2);
+  if (!httpBodyText.value) return;
+  const parsed = JSON.parse(httpBodyText.value);
+  httpBodyText.value = JSON.stringify(parsed, null, 2);
 };
+
+watch(rabbitmqMode, (mode) => {
+  // 只在新增模式且有選擇模式時才載入模板
+  if (
+    formData.value.target_type === "rabbitmq" &&
+    rabbitmq_templates[mode] &&
+    !isEdit.value &&
+    mode // 確保有選擇模式
+  ) {
+    httpBodyText.value = JSON.stringify(rabbitmq_templates[mode], null, 2);
+    httpBodyError.value = "";
+  }
+});
 // 🔥 暴露方法給父組件
 defineExpose({
-	setScheduleExpression,
+  setScheduleExpression,
 });
 
 onMounted(() => {
-	formatJSON();
+  formatJSON();
 });
 </script>
 <style scoped>

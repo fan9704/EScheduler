@@ -13,7 +13,7 @@ from src.dependencies.services import get_scheduler_service
 router = APIRouter()
 
 
-@router.post("/", response_model=ScheduledTaskResponse)
+@router.post("", response_model=ScheduledTaskResponse)
 async def create_task(
     task_data: ScheduledTaskCreate,
     service: SchedulerService = Depends(get_scheduler_service)
@@ -22,7 +22,7 @@ async def create_task(
     return await service.create_task(task_data)
 
 
-@router.get("/", response_model=List[ScheduledTaskResponse])
+@router.get("", response_model=List[ScheduledTaskResponse])
 async def get_all_tasks(
     state: Optional[TaskState] = Query(None, description="任務狀態過濾"),
     service: SchedulerService = Depends(get_scheduler_service)
