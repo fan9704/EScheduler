@@ -86,23 +86,23 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
-import { expression_template } from "@/templates/scheduler";
+import { computed, ref } from "vue";
 import type {
-  ScheduleTemplateResponse,
-  ScheduleType,
+	ScheduleTemplateResponse,
+	ScheduleType,
 } from "@/models/schedule_helper";
+import { expression_template } from "@/templates/scheduler";
 
 const emit = defineEmits<{
-  select: [expression: string];
+	select: [expression: string];
 }>();
 
 // 直接用本地 JSON 作為模板資料，並將 type 轉換為 ScheduleType
 const templates = ref<ScheduleTemplateResponse[]>(
-  expression_template.map((t) => ({
-    ...t,
-    type: t.type as ScheduleType,
-  }))
+	expression_template.map((t) => ({
+		...t,
+		type: t.type as ScheduleType,
+	})),
 );
 
 const selectedCategory = ref("");
@@ -110,39 +110,39 @@ const searchKeyword = ref("");
 const selectedTemplate = ref<ScheduleTemplateResponse | null>(null);
 
 const categories = computed(() => {
-  const cats = [...new Set(templates.value.map((t) => t.category))];
-  return cats.map((cat) => ({ title: cat, value: cat }));
+	const cats = [...new Set(templates.value.map((t) => t.category))];
+	return cats.map((cat) => ({ title: cat, value: cat }));
 });
 
 const filteredTemplates = computed(() => {
-  let result = templates.value;
+	let result = templates.value;
 
-  if (selectedCategory.value) {
-    result = result.filter((t) => t.category === selectedCategory.value);
-  }
+	if (selectedCategory.value) {
+		result = result.filter((t) => t.category === selectedCategory.value);
+	}
 
-  if (searchKeyword.value) {
-    const keyword = searchKeyword.value.toLowerCase();
-    result = result.filter(
-      (t) =>
-        t.name.toLowerCase().includes(keyword) ||
-        t.description.toLowerCase().includes(keyword)
-    );
-  }
+	if (searchKeyword.value) {
+		const keyword = searchKeyword.value.toLowerCase();
+		result = result.filter(
+			(t) =>
+				t.name.toLowerCase().includes(keyword) ||
+				t.description.toLowerCase().includes(keyword),
+		);
+	}
 
-  return result;
+	return result;
 });
 
 const selectTemplate = (template: ScheduleTemplateResponse) => {
-  selectedTemplate.value = template;
-  console.log("TemplateSelector: 選擇模板:", template.name);
+	selectedTemplate.value = template;
+	console.log("TemplateSelector: 選擇模板:", template.name);
 };
 
 const useTemplate = (template: ScheduleTemplateResponse) => {
-  console.log("TemplateSelector: 使用模板表達式:", template.expression);
-  selectedTemplate.value = template;
-  // 發送選擇事件
-  emit("select", template.expression);
+	console.log("TemplateSelector: 使用模板表達式:", template.expression);
+	selectedTemplate.value = template;
+	// 發送選擇事件
+	emit("select", template.expression);
 };
 </script>
 

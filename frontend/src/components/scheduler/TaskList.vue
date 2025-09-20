@@ -116,16 +116,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from "vue";
-import { useRouter } from "vue-router";
-import { useSchedulerStore } from "@/stores/scheduler";
-import {
-  ScheduledTaskResponse,
-  TaskState,
-  TaskStateUpdateRequest,
-} from "@/models/scheduler";
 import dayjs from "dayjs";
-import { id } from "vuetify/locale";
+import { computed, onMounted, ref, watch } from "vue";
+import { useRouter } from "vue-router";
+import {
+	type ScheduledTaskResponse,
+	TaskState,
+	type TaskStateUpdateRequest,
+} from "@/models/scheduler";
+import { useSchedulerStore } from "@/stores/scheduler";
 
 const router = useRouter();
 const schedulerStore = useSchedulerStore();
@@ -135,157 +134,157 @@ const statusFilter = ref("");
 const typeFilter = ref("");
 
 const { loading } = schedulerStore;
-let tasks = ref<ScheduledTaskResponse[]>([]);
+const tasks = ref<ScheduledTaskResponse[]>([]);
 
 const headers = [
-  { title: "任務名稱", key: "name", sortable: true },
-  { title: "狀態", key: "state", sortable: true },
-  { title: "類型", key: "target_type", sortable: true },
-  { title: "排程表達式", key: "schedule_expression", sortable: false },
-  { title: "下次執行", key: "next_execution_time", sortable: true },
-  { title: "執行次數", key: "execution_count", sortable: true },
-  { title: "操作", key: "actions", sortable: false, width: 120 },
+	{ title: "任務名稱", key: "name", sortable: true },
+	{ title: "狀態", key: "state", sortable: true },
+	{ title: "類型", key: "target_type", sortable: true },
+	{ title: "排程表達式", key: "schedule_expression", sortable: false },
+	{ title: "下次執行", key: "next_execution_time", sortable: true },
+	{ title: "執行次數", key: "execution_count", sortable: true },
+	{ title: "操作", key: "actions", sortable: false, width: 120 },
 ];
 
 const statusOptions = [
-  { title: "啟用", value: TaskState.ENABLED },
-  { title: "禁用", value: TaskState.DISABLED },
-  { title: "暫停", value: TaskState.PAUSED },
+	{ title: "啟用", value: TaskState.ENABLED },
+	{ title: "禁用", value: TaskState.DISABLED },
+	{ title: "暫停", value: TaskState.PAUSED },
 ];
 
 const typeOptions = [
-  { title: "HTTP", value: "http" },
-  { title: "Webhook", value: "webhook" },
-  { title: "RabbitMQ", value: "rabbitmq" },
-  { title: "Email", value: "email" },
+	{ title: "HTTP", value: "http" },
+	{ title: "Webhook", value: "webhook" },
+	{ title: "RabbitMQ", value: "rabbitmq" },
+	{ title: "Email", value: "email" },
 ];
 
 watch(
-  () => schedulerStore.tasks,
-  (newTasks) => {
-    tasks.value = newTasks;
-  },
-  { immediate: true }
+	() => schedulerStore.tasks,
+	(newTasks) => {
+		tasks.value = newTasks;
+	},
+	{ immediate: true },
 );
 const filteredTasks = computed(() => {
-  let result = schedulerStore.tasks;
+	let result = schedulerStore.tasks;
 
-  if (searchKeyword.value) {
-    result = result.filter(
-      (task) =>
-        task.name.toLowerCase().includes(searchKeyword.value.toLowerCase()) ||
-        (task.description &&
-          task.description
-            .toLowerCase()
-            .includes(searchKeyword.value.toLowerCase()))
-    );
-  }
+	if (searchKeyword.value) {
+		result = result.filter(
+			(task) =>
+				task.name.toLowerCase().includes(searchKeyword.value.toLowerCase()) ||
+				(task.description &&
+					task.description
+						.toLowerCase()
+						.includes(searchKeyword.value.toLowerCase())),
+		);
+	}
 
-  if (statusFilter.value) {
-    result = result.filter((task) => task.state === statusFilter.value);
-  }
+	if (statusFilter.value) {
+		result = result.filter((task) => task.state === statusFilter.value);
+	}
 
-  if (typeFilter.value) {
-    result = result.filter((task) => task.target_type === typeFilter.value);
-  }
+	if (typeFilter.value) {
+		result = result.filter((task) => task.target_type === typeFilter.value);
+	}
 
-  return result;
+	return result;
 });
 
 const getStateColor = (state: string) => {
-  switch (state) {
-    case TaskState.ENABLED:
-      return "success";
-    case TaskState.DISABLED:
-      return "error";
-    case TaskState.PAUSED:
-      return "warning";
-    default:
-      return "default";
-  }
+	switch (state) {
+		case TaskState.ENABLED:
+			return "success";
+		case TaskState.DISABLED:
+			return "error";
+		case TaskState.PAUSED:
+			return "warning";
+		default:
+			return "default";
+	}
 };
 
 const getStateText = (state: string) => {
-  switch (state) {
-    case TaskState.ENABLED:
-      return "啟用";
-    case TaskState.DISABLED:
-      return "禁用";
-    case TaskState.PAUSED:
-      return "暫停";
-    default:
-      return state;
-  }
+	switch (state) {
+		case TaskState.ENABLED:
+			return "啟用";
+		case TaskState.DISABLED:
+			return "禁用";
+		case TaskState.PAUSED:
+			return "暫停";
+		default:
+			return state;
+	}
 };
 const getStateTextComputed = computed(() => {
-  return (state: String) => {
-    switch (state) {
-      case TaskState.ENABLED:
-        return "啟用";
-      case TaskState.DISABLED:
-        return "禁用";
-      case TaskState.PAUSED:
-        return "暫停";
-      default:
-        return "禁用";
-    }
-  };
+	return (state: string) => {
+		switch (state) {
+			case TaskState.ENABLED:
+				return "啟用";
+			case TaskState.DISABLED:
+				return "禁用";
+			case TaskState.PAUSED:
+				return "暫停";
+			default:
+				return "禁用";
+		}
+	};
 });
 
 const formatDateTime = (dateTime: string) => {
-  return dayjs(dateTime).format("YYYY-MM-DD HH:mm:ss");
+	return dayjs(dateTime).format("YYYY-MM-DD HH:mm:ss");
 };
 
 const refreshTasks = async () => {
-  await schedulerStore.fetchTasks();
+	await schedulerStore.fetchTasks();
 };
 
 const searchTasks = async () => {
-  if (searchKeyword.value.trim()) {
-    await schedulerStore.searchTasks(searchKeyword.value.trim());
-  } else {
-    await schedulerStore.fetchTasks();
-  }
+	if (searchKeyword.value.trim()) {
+		await schedulerStore.searchTasks(searchKeyword.value.trim());
+	} else {
+		await schedulerStore.fetchTasks();
+	}
 };
 
 const updateTaskState = async (id: number, state: TaskState) => {
-  try {
-    let updateStateRequest: TaskStateUpdateRequest = {
-      state: state,
-    };
-    await schedulerStore.updateTaskState(id, updateStateRequest);
-    // 顯示成功消息
-  } catch (error) {
-    // 顯示錯誤消息
-  }
+	try {
+		const updateStateRequest: TaskStateUpdateRequest = {
+			state: state,
+		};
+		await schedulerStore.updateTaskState(id, updateStateRequest);
+		// 顯示成功消息
+	} catch (error) {
+		// 顯示錯誤消息
+	}
 };
 
 const triggerTask = async (id: number) => {
-  try {
-    await schedulerStore.triggerTask(id);
-    // 顯示成功消息
-  } catch (error) {
-    // 顯示錯誤消息
-  }
+	try {
+		await schedulerStore.triggerTask(id);
+		// 顯示成功消息
+	} catch (error) {
+		// 顯示錯誤消息
+	}
 };
 
 const editTask = (id: number) => {
-  router.push(`/tasks/${id}/edit`);
+	router.push(`/tasks/${id}/edit`);
 };
 
 const deleteTask = async (id: number) => {
-  // 顯示確認對話框
-  if (confirm("確定要刪除這個任務嗎？")) {
-    try {
-      await schedulerStore.deleteTask(id);
-      // 顯示成功消息
-    } catch (error) {
-      // 顯示錯誤消息
-    }
-  }
+	// 顯示確認對話框
+	if (confirm("確定要刪除這個任務嗎？")) {
+		try {
+			await schedulerStore.deleteTask(id);
+			// 顯示成功消息
+		} catch (error) {
+			// 顯示錯誤消息
+		}
+	}
 };
 
 onMounted(() => {
-  schedulerStore.fetchTasks();
+	schedulerStore.fetchTasks();
 });
 </script>

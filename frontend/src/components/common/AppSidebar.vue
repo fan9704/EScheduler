@@ -31,32 +31,33 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, ref } from "vue";
+import { useRouter } from "vue-router";
 
 const props = defineProps<{
-  modelValue: boolean
-}>()
+	modelValue: boolean;
+}>();
 
 const emit = defineEmits<{
-  'update:modelValue': [value: boolean]
-}>()
+	"update:modelValue": [value: boolean];
+}>();
 
-const router = useRouter()
-const rail = ref(false)
+const router = useRouter();
+const rail = ref(false);
 
 const localDrawer = computed({
-  get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value),
-})
+	get: () => props.modelValue,
+	set: (value) => emit("update:modelValue", value),
+});
 
 // 過濾出需要在導航中顯示的路由
-const navigationRoutes = computed(() => 
-  router.getRoutes().filter(route => 
-    route.meta?.title && 
-    route.meta?.icon && 
-    !route.path.includes(':') && // 排除動態路由
-    route.name !== 'NotFound'
-  )
-)
+const navigationRoutes = computed(() =>
+	router.getRoutes().filter(
+		(route) =>
+			route.meta?.title &&
+			route.meta?.icon &&
+			!route.path.includes(":") && // 排除動態路由
+			route.name !== "NotFound",
+	),
+);
 </script>
