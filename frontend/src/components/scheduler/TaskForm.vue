@@ -124,7 +124,7 @@
                   v-for="(row, idx) in headerRows"
                   :key="idx"
                   class="d-flex align-center mb-2"
-                  style="margin-top: 0px"
+                  style="margin-top: 0"
                 >
                   <v-combobox
                     v-model="row.key"
@@ -361,7 +361,7 @@ watch(
 // 監聽 HTTP 欄位變化
 watch(
 	[httpMethod, headerRows, httpBodyText],
-	([method, headers, body]) => {
+	([method, _, body]) => {
 		if (formData.value.target_type === "http") {
 			let bodyObj = {};
 			if (body.trim()) {

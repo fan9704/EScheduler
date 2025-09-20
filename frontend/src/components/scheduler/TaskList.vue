@@ -119,7 +119,6 @@
 import dayjs from "dayjs";
 import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
-import { id } from "vuetify/locale";
 import {
 	type ScheduledTaskResponse,
 	TaskState,
