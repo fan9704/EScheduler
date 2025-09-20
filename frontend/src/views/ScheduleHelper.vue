@@ -97,54 +97,54 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { useScheduleHelperStore } from '@/stores/schedule_helper'
-import TemplateSelector from '@/components/schedule_helper/TemplateSelector.vue'
-import RateEditor from '@/components/schedule_helper/RateEditor.vue'
-import CronEditor from '@/components/schedule_helper/CronEditor.vue'
-import ExpressionValidator from '@/components/schedule_helper/ExpressionValidator.vue'
+import { ref } from "vue";
+import { useRouter } from "vue-router";
+import CronEditor from "@/components/schedule_helper/CronEditor.vue";
+import ExpressionValidator from "@/components/schedule_helper/ExpressionValidator.vue";
+import RateEditor from "@/components/schedule_helper/RateEditor.vue";
+import TemplateSelector from "@/components/schedule_helper/TemplateSelector.vue";
 import type {
-  RateExpressionRequest,
-  CronExpressionRequest,
-  ScheduleValidationRequest,
-} from '@/models/schedule_helper'
+	CronExpressionRequest,
+	RateExpressionRequest,
+	ScheduleValidationRequest,
+} from "@/models/schedule_helper";
+import { useScheduleHelperStore } from "@/stores/schedule_helper";
 
-const router = useRouter()
-const scheduleHelperStore = useScheduleHelperStore()
+const router = useRouter();
+const scheduleHelperStore = useScheduleHelperStore();
 
-const { currentExpression } = scheduleHelperStore
+const { currentExpression } = scheduleHelperStore;
 
-const activeTab = ref('template')
+const activeTab = ref("template");
 
 const handleTemplateSelect = (expression: string) => {
-  // 使用模板表達式進行驗證
-  scheduleHelperStore.validateExpression({ expression })
-}
+	// 使用模板表達式進行驗證
+	scheduleHelperStore.validateExpression({ expression });
+};
 
 const handleRateGenerate = (request: RateExpressionRequest) => {
-  scheduleHelperStore.generateRateExpression(request)
-}
+	scheduleHelperStore.generateRateExpression(request);
+};
 
 const handleCronGenerate = (request: CronExpressionRequest) => {
-  scheduleHelperStore.generateCronExpression(request)
-}
+	scheduleHelperStore.generateCronExpression(request);
+};
 
 const handleValidate = (request: ScheduleValidationRequest) => {
-  scheduleHelperStore.validateExpression(request)
-}
+	scheduleHelperStore.validateExpression(request);
+};
 
 const useExpression = () => {
-  // @ts-ignore
-  if (currentExpression?.value) {
-    // 跳轉到創建任務頁面，並帶上表達式
-    router.push({
-      path: '/tasks/create',
-      query: {
-        // @ts-ignore
-        expression: currentExpression?.value.expression,
-      },
-    })
-  }
-}
+	// @ts-expect-error
+	if (currentExpression?.value) {
+		// 跳轉到創建任務頁面，並帶上表達式
+		router.push({
+			path: "/tasks/create",
+			query: {
+				// @ts-expect-error
+				expression: currentExpression?.value.expression,
+			},
+		});
+	}
+};
 </script>

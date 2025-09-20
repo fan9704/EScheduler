@@ -176,75 +176,75 @@
 </template>
 
 <script setup lang="ts">
-import {computed, onMounted, ref} from 'vue'
-import {useSchedulerStore} from '@/stores/scheduler'
-import {TaskState} from '@/models/scheduler'
-import dayjs from 'dayjs'
-import {statisticService} from '@/services/statistic'
-import {StatisticDashboardMetricResponse} from '@/models/statistic'
+import dayjs from "dayjs";
+import { computed, onMounted, ref } from "vue";
+import { TaskState } from "@/models/scheduler";
+import type { StatisticDashboardMetricResponse } from "@/models/statistic";
+import { statisticService } from "@/services/statistic";
+import { useSchedulerStore } from "@/stores/scheduler";
 
-const schedulerStore = useSchedulerStore()
+const schedulerStore = useSchedulerStore();
 
-const { tasks, stats, loading } = schedulerStore
+const { tasks, stats, loading } = schedulerStore;
 const dashboard_metrics = ref<StatisticDashboardMetricResponse>({
-  total_tasks: 0,
-  enabled_tasks: 0,
-  disabled_tasks: 0,
-  today_executions_count: 0
-})
-const recentTasks = computed(() => 
-  tasks.slice(0, 5).sort((a, b) => 
-    new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
-  )
-)
+	total_tasks: 0,
+	enabled_tasks: 0,
+	disabled_tasks: 0,
+	today_executions_count: 0,
+});
+const recentTasks = computed(() =>
+	tasks
+		.slice(0, 5)
+		.sort(
+			(a, b) =>
+				new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
+		),
+);
 
 const getStateColor = (state: string) => {
-  switch (state) {
-    case TaskState.ENABLED:
-      return 'success'
-    case TaskState.DISABLED:
-      return 'error'
-    case TaskState.PAUSED:
-      return 'warning'
-    default:
-      return 'grey'
-  }
-}
+	switch (state) {
+		case TaskState.ENABLED:
+			return "success";
+		case TaskState.DISABLED:
+			return "error";
+		case TaskState.PAUSED:
+			return "warning";
+		default:
+			return "grey";
+	}
+};
 
 const getStateIcon = (state: string) => {
-  switch (state) {
-    case TaskState.ENABLED:
-      return 'mdi-check'
-    case TaskState.DISABLED:
-      return 'mdi-close'
-    case TaskState.PAUSED:
-      return 'mdi-pause'
-    default:
-      return 'mdi-help'
-  }
-}
+	switch (state) {
+		case TaskState.ENABLED:
+			return "mdi-check";
+		case TaskState.DISABLED:
+			return "mdi-close";
+		case TaskState.PAUSED:
+			return "mdi-pause";
+		default:
+			return "mdi-help";
+	}
+};
 
 const get_statistic_dashboard_metrics = async () => {
-  try {
-    dashboard_metrics.value = await statisticService.get_dashboard_statistic()
-  } catch (error) {
-    console.error('Error fetching dashboard metrics:', error)
-  }
-}
+	try {
+		dashboard_metrics.value = await statisticService.get_dashboard_statistic();
+	} catch (error) {
+		console.error("Error fetching dashboard metrics:", error);
+	}
+};
 
 const formatDateTime = (dateTime: string) => {
-  return dayjs(dateTime).format('MM-DD HH:mm')
-}
+	return dayjs(dateTime).format("MM-DD HH:mm");
+};
 
 const refreshData = async () => {
-  await Promise.all([
-    schedulerStore.fetchTasks(),
-    schedulerStore.fetchStats(),
-  ])
-}
+	await Promise.all([schedulerStore.fetchTasks(), schedulerStore.fetchStats()]);
+};
 
 onMounted(() => {
-  refreshData()
-  get_statistic_dashboard_metrics()
-})
+	refreshData();
+	get_statistic_dashboard_metrics();
+});
 </script>
