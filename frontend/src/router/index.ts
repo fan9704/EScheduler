@@ -70,6 +70,14 @@ const routes: RouteRecordRaw[] = [
 			title: "創建 Email 模板",
 		},
 	},
+    {
+        path: "/email-templates/:id/edit",
+        name: "EmailTemplateEdit",
+        component: () => import("@/views/EmailTemplateEdit.vue"),
+        meta: {
+            title: "預覽 Email 模板",
+        },
+    },
 	{
 		path: "/email-templates/:id/preview",
 		name: "EmailTemplatePreview",
