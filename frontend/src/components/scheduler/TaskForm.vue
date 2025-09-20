@@ -148,6 +148,7 @@
                 v-model="rabbitmqMode"
                 :items="rabbitmqModeOptions"
                 label="RabbitMQ 模式"
+                placeholder="請選擇模式"
                 variant="outlined"
                 density="compact"
                 :rules="[rules.required]"
@@ -262,23 +263,23 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, reactive, ref, watch } from "vue";
 import type {
-	ScheduledTaskCreate,
-	ScheduledTaskResponse,
-	TargetType,
+  ScheduledTaskCreate,
+  ScheduledTaskResponse,
+  TargetType,
 } from "@/models/scheduler";
 import { TaskState } from "@/models/scheduler";
 import { webhook_template } from "@/templates/webhook";
 import { rabbitmq_templates } from "@/templates/rabbitmq";
 
 const props = defineProps<{
-	initialData?: ScheduledTaskResponse | Partial<ScheduledTaskCreate>;
-	loading?: boolean;
+  initialData?: ScheduledTaskResponse | Partial<ScheduledTaskCreate>;
+  loading?: boolean;
 }>();
 
 const emit = defineEmits<{
-	submit: [data: ScheduledTaskCreate];
-	cancel: [];
-	"open-schedule-wizard": [formData: Partial<ScheduledTaskCreate>];
+  submit: [data: ScheduledTaskCreate];
+  cancel: [];
+  "open-schedule-wizard": [formData: Partial<ScheduledTaskCreate>];
 }>();
 
 const formRef = ref();
@@ -286,14 +287,14 @@ const targetInputText = ref("");
 const targetInputError = ref("");
 const cmRef = ref();
 const cmOptions = reactive({
-	mode: "application/json",
-	theme: "tomorrow-night-bright",
-	lineNumbers: true,
-	lineWiseCopyCut: true,
-	gutters: ["CodeMirror-lint-markers"],
-	autoCloseBrackets: true,
-	matchBrackets: true,
-	lint: true,
+  mode: "application/json",
+  theme: "tomorrow-night-bright",
+  lineNumbers: true,
+  lineWiseCopyCut: true,
+  gutters: ["CodeMirror-lint-markers"],
+  autoCloseBrackets: true,
+  matchBrackets: true,
+  lint: true,
 });
 
 // HTTP Method 欄位
@@ -315,57 +316,57 @@ const rabbitmqModeOptions = [
 // HTTP Headers 欄位
 const headerRows = ref([{ key: "", value: "" }]);
 const commonHeaders = [
-	"Authorization",
-	"Host",
-	"Accept-Language",
-	"Accept-Encoding",
-	"Cookie",
-	"Cache-Control",
-	"Content-Length",
-	"Content-Type",
-	"Accept",
-	"Referer",
-	"User-Agent",
-	"WWW-Authenticate",
-	"Proxy-Authenticate",
-	"Proxy-Authorization",
-	"Age",
+  "Authorization",
+  "Host",
+  "Accept-Language",
+  "Accept-Encoding",
+  "Cookie",
+  "Cache-Control",
+  "Content-Length",
+  "Content-Type",
+  "Accept",
+  "Referer",
+  "User-Agent",
+  "WWW-Authenticate",
+  "Proxy-Authenticate",
+  "Proxy-Authorization",
+  "Age",
 ];
 // 組合 headers 物件
 const getHeadersObject = () => {
-	const obj: Record<string, string> = {};
-	headerRows.value.forEach((row) => {
-		if (row.key) obj[row.key] = row.value;
-	});
-	return obj;
+  const obj: Record<string, string> = {};
+  headerRows.value.forEach((row) => {
+    if (row.key) obj[row.key] = row.value;
+  });
+  return obj;
 };
 
 const selectedWebhookTemplate = ref(null);
 const formData = ref({
-	name: "",
-	description: "",
-	schedule_expression: "",
-	timezone: "Asia/Taipei",
-	target_type: "http" as TargetType,
-	target_arn: "",
-	target_input: {} as Object,
-	max_retry_attempts: 3,
-	state: TaskState.ENABLED,
+  name: "",
+  description: "",
+  schedule_expression: "",
+  timezone: "Asia/Taipei",
+  target_type: "http" as TargetType,
+  target_arn: "",
+  target_input: {} as Object,
+  max_retry_attempts: 3,
+  state: TaskState.ENABLED,
 });
 
 const isEdit = computed(() => {
-	return !!(props.initialData && "id" in props.initialData);
+  return !!(props.initialData && "id" in props.initialData);
 });
 
 const targetTypeOptions = [
-	{ title: "HTTP", value: "http" },
-	{ title: "Webhook", value: "webhook" },
-	{ title: "RabbitMQ", value: "rabbitmq" },
-	{ title: "Email", value: "email" },
+  { title: "HTTP", value: "http" },
+  { title: "Webhook", value: "webhook" },
+  { title: "RabbitMQ", value: "rabbitmq" },
+  { title: "Email", value: "email" },
 ];
 
 const rules = {
-	required: (value: any) => !!value || "此欄位為必填",
+  required: (value: any) => !!value || "此欄位為必填",
 };
 
 // 監聽初始數據變化
@@ -456,55 +457,55 @@ watch(
 
 // 監聽 target_input 變化 (非 HTTP 類型)
 watch(targetInputText, (newValue) => {
-	if (formData.value.target_type !== "http") {
-		targetInputError.value = "";
-		try {
-			formData.value.target_input = newValue ? JSON.parse(newValue) : {};
-		} catch (error: any) {
-			targetInputError.value = `JSON·格式錯誤:·${error.message}`;
-		}
-	}
+  if (formData.value.target_type !== "http") {
+    targetInputError.value = "";
+    try {
+      formData.value.target_input = newValue ? JSON.parse(newValue) : {};
+    } catch (error: any) {
+      targetInputError.value = `JSON·格式錯誤:·${error.message}`;
+    }
+  }
 });
 
 const openScheduleWizard = () => {
-	console.log("TaskForm 點擊排程精靈按鈕，當前數據:", formData.value);
-	emit("open-schedule-wizard", { ...formData.value });
+  console.log("TaskForm 點擊排程精靈按鈕，當前數據:", formData.value);
+  emit("open-schedule-wizard", { ...formData.value });
 };
 
 const handleSubmit = async () => {
-	const { valid } = await formRef.value.validate();
-	// 檢查 JSON 欄位錯誤
-	if (formData.value.target_type === "http") {
-		if (httpHeadersError.value || httpBodyError.value) return;
-	} else {
-		if (targetInputError.value) return;
-	}
-	if (valid) {
-		const payload = {
-			...formData.value,
-		};
-		console.log("TaskForm 提交數據:", payload);
-		emit("submit", payload);
-	}
+  const { valid } = await formRef.value.validate();
+  // 檢查 JSON 欄位錯誤
+  if (formData.value.target_type === "http") {
+    if (httpHeadersError.value || httpBodyError.value) return;
+  } else {
+    if (targetInputError.value) return;
+  }
+  if (valid) {
+    const payload = {
+      ...formData.value,
+    };
+    console.log("TaskForm 提交數據:", payload);
+    emit("submit", payload);
+  }
 };
 
 // 🔥 新增：設置排程表達式的方法
 const setScheduleExpression = (expression: string) => {
-	console.log("TaskForm.setScheduleExpression 被調用，表達式:", expression);
-	formData.value.schedule_expression = expression;
+  console.log("TaskForm.setScheduleExpression 被調用，表達式:", expression);
+  formData.value.schedule_expression = expression;
 
-	// 使用 nextTick 確保 DOM 更新
-	nextTick(() => {
-		console.log(
-			"TaskForm.setScheduleExpression 完成，當前 formData:",
-			formData.value,
-		);
-	});
+  // 使用 nextTick 確保 DOM 更新
+  nextTick(() => {
+    console.log(
+      "TaskForm.setScheduleExpression 完成，當前 formData:",
+      formData.value
+    );
+  });
 };
 const formatJSON = () => {
-	if (!httpBodyText.value) return;
-	const parsed = JSON.parse(httpBodyText.value);
-	httpBodyText.value = JSON.stringify(parsed, null, 2);
+  if (!httpBodyText.value) return;
+  const parsed = JSON.parse(httpBodyText.value);
+  httpBodyText.value = JSON.stringify(parsed, null, 2);
 };
 
 watch(rabbitmqMode, (mode) => {
@@ -521,11 +522,11 @@ watch(rabbitmqMode, (mode) => {
 });
 // 🔥 暴露方法給父組件
 defineExpose({
-	setScheduleExpression,
+  setScheduleExpression,
 });
 
 onMounted(() => {
-	formatJSON();
+  formatJSON();
 });
 </script>
 <style scoped>
