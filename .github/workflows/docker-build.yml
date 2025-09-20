@@ -28,7 +28,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository }}/escheduler
+          images: ghcr.io/${{ github.repository }}
           tags: |
             # main 分支 → latest
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
