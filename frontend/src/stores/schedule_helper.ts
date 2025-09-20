@@ -1,16 +1,16 @@
-import { defineStore } from "pinia";
-import { ref } from "vue";
+import {defineStore} from "pinia";
+import {ref} from "vue";
 import type {
-	CronExpressionRequest,
-	CronHelpResponse,
-	QuickScheduleRequest,
-	RateExpressionRequest,
-	ScheduleExpressionResponse,
-	ScheduleTemplateResponse,
-	ScheduleValidationRequest,
-	ScheduleValidationResponse,
+    CronExpressionRequest,
+    CronHelpResponse,
+    QuickScheduleRequest,
+    RateExpressionRequest,
+    ScheduleExpressionResponse,
+    ScheduleTemplateResponse,
+    ScheduleValidationRequest,
+    ScheduleValidationResponse,
 } from "@/models/schedule_helper";
-import { scheduleHelperService } from "@/services/schedule_helper";
+import {scheduleHelperService} from "@/services/schedule_helper";
 
 export const useScheduleHelperStore = defineStore("scheduleHelper", () => {
 	// State - 確保初始化為正確的類型
@@ -38,9 +38,7 @@ export const useScheduleHelperStore = defineStore("scheduleHelper", () => {
 
 			return response;
 		} catch (err) {
-			const errorMessage =
-				err instanceof Error ? err.message : "生成 Rate 表達式失敗";
-			error.value = errorMessage;
+            error.value = err instanceof Error ? err.message : "生成 Rate 表達式失敗";
 			console.error("Store: 生成 Rate 表達式失敗:", err);
 			throw err;
 		} finally {
@@ -64,9 +62,7 @@ export const useScheduleHelperStore = defineStore("scheduleHelper", () => {
 
 			return response;
 		} catch (err) {
-			const errorMessage =
-				err instanceof Error ? err.message : "生成 Cron 表達式失敗";
-			error.value = errorMessage;
+            error.value = err instanceof Error ? err.message : "生成 Cron 表達式失敗";
 			console.error("Store: 生成 Cron 表達式失敗:", err);
 			throw err;
 		} finally {
@@ -88,9 +84,7 @@ export const useScheduleHelperStore = defineStore("scheduleHelper", () => {
 
 			return response;
 		} catch (err) {
-			const errorMessage =
-				err instanceof Error ? err.message : "生成快速排程失敗";
-			error.value = errorMessage;
+            error.value = err instanceof Error ? err.message : "生成快速排程失敗";
 			console.error("Store: 生成快速排程失敗:", err);
 			throw err;
 		} finally {
@@ -125,9 +119,7 @@ export const useScheduleHelperStore = defineStore("scheduleHelper", () => {
 
 			return response;
 		} catch (err) {
-			const errorMessage =
-				err instanceof Error ? err.message : "驗證表達式失敗";
-			error.value = errorMessage;
+            error.value = err instanceof Error ? err.message : "驗證表達式失敗";
 			console.error("Store: 驗證表達式失敗:", err);
 			throw err;
 		} finally {

@@ -1,13 +1,12 @@
-import { defineStore } from "pinia";
-import { computed, ref } from "vue";
+import {defineStore} from "pinia";
+import {computed, ref} from "vue";
 import type {
-	ScheduledTaskCreate,
-	ScheduledTaskResponse,
-	ScheduledTaskUpdate,
-	SchedulerStatsResponse,
-	TaskStateUpdateRequest,
+    ScheduledTaskCreate,
+    ScheduledTaskResponse,
+    SchedulerStatsResponse,
+    TaskStateUpdateRequest,
 } from "@/models/scheduler";
-import { schedulerService } from "@/services/scheduler";
+import {schedulerService} from "@/services/scheduler";
 
 export const useSchedulerStore = defineStore("scheduler", () => {
 	// State
@@ -91,8 +90,7 @@ export const useSchedulerStore = defineStore("scheduler", () => {
 
 			return response;
 		} catch (err) {
-			const errorMessage = err instanceof Error ? err.message : "更新任務失敗";
-			error.value = errorMessage;
+            error.value = err instanceof Error ? err.message : "更新任務失敗";
 			throw err;
 		} finally {
 			loading.value = false;
