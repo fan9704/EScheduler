@@ -9,6 +9,7 @@
     
     <TaskForm 
       ref="taskFormRef"
+      :initial-data="initialData"
       @submit="handleSubmit" 
       @cancel="handleCancel"
       @open-schedule-wizard="handleOpenScheduleWizard"
@@ -23,13 +24,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
-import { useRouter } from "vue-router";
+import { computed, ref } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import ScheduleWizardDialog from "@/components/schedule_helper/ScheduleWizardDialog.vue";
-import type TaskForm from "@/components/scheduler/TaskForm.vue";
-import type { ScheduledTaskCreate } from "@/models/scheduler";
+import TaskForm from "@/components/scheduler/TaskForm.vue";
+import type { ScheduledTaskCreate, TargetType } from "@/models/scheduler";
 import { useSchedulerStore } from "@/stores/scheduler";
 
+const route = useRoute();
 const router = useRouter();
 const schedulerStore = useSchedulerStore();
 
@@ -37,17 +39,41 @@ const showScheduleWizard = ref(false);
 const taskFormRef = ref<InstanceType<typeof TaskForm> | null>(null);
 const tempFormData = ref<Partial<ScheduledTaskCreate>>({});
 
+// 根據查詢參數設置初始數據
+const initialData = computed(() => {
+  const type = route.query.type as TargetType;
+  if (type) {
+    return {
+      target_type: type,
+      timezone: "Asia/Taipei"
+    };
+  }
+  return undefined;
+});
+
 const handleSubmit = async (taskData: ScheduledTaskCreate) => {
 	try {
 		await schedulerStore.createTask(taskData);
-		router.push("/tasks");
+    
+    // 根據任務類型決定跳轉目標
+    if (taskData.target_type === 'email') {
+      router.push("/email-tasks");
+    } else {
+      router.push("/tasks");
+    }
 	} catch (error) {
 		console.error("創建任務失敗:", error);
 	}
 };
 
 const handleCancel = () => {
-	router.push("/tasks");
+  // 根據查詢參數決定返回位置
+  const type = route.query.type;
+  if (type === 'email') {
+    router.push("/email-tasks");
+  } else {
+    router.push("/tasks");
+  }
 };
 
 const handleOpenScheduleWizard = (
