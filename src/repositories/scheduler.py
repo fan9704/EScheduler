@@ -19,6 +19,14 @@ class ScheduledTaskRepository(Repository):
         """根據狀態獲取任務"""
         return await self.model.filter(state=state)
 
+    async def get_tasks_by_target_type(self, target_type: str) -> List[ScheduledTask]:
+        """根據目標類型獲取任務"""
+        return await self.model.filter(target_type=target_type)
+
+    async def get_tasks_by_state_and_target_type(self, state: TaskState, target_type: str) -> List[ScheduledTask]:
+        """根據狀態和目標類型獲取任務"""
+        return await self.model.filter(state=state, target_type=target_type)
+
     async def update_execution_time(self, task_id: int, last_execution: datetime, next_execution: datetime = None):
         """更新任務執行時間"""
         update_data = {

@@ -206,10 +206,14 @@ class SchedulerService:
         except Exception:
             raise HTTPException(status_code=404, detail="任務不存在")
 
-    async def get_all_tasks(self, state: Optional[TaskState] = None) -> List[ScheduledTaskResponse]:
+    async def get_all_tasks(self, state: Optional[TaskState] = None, target_type: Optional[str] = None) -> List[ScheduledTaskResponse]:
         """獲取所有任務"""
-        if state:
+        if state and target_type:
+            tasks = await self.task_repository.get_tasks_by_state_and_target_type(state, target_type)
+        elif state:
             tasks = await self.task_repository.get_tasks_by_state(state)
+        elif target_type:
+            tasks = await self.task_repository.get_tasks_by_target_type(target_type)
         else:
             tasks = await self.task_repository.find_all()
         
