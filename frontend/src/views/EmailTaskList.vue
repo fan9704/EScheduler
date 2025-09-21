@@ -231,8 +231,8 @@ const templateOptions = computed(() => [
 const headers = [
   { title: '任務名稱', key: 'name', sortable: true },
   { title: '狀態', key: 'state', sortable: true },
-  { title: '模板', key: 'template', sortable: false },
-  { title: '收件人', key: 'recipients', sortable: false },
+  { title: '模板', key: 'target_input.template_id', sortable: false },
+  { title: '收件人', key: 'target_input.recipients', sortable: false },
   { title: '排程表達式', key: 'schedule_expression', sortable: false },
   { title: '下次執行', key: 'next_execution_time', sortable: true },
   { title: '執行次數', key: 'execution_count', sortable: true },

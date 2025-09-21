@@ -111,7 +111,7 @@ const router = createRouter({
 });
 
 // 路由守衛
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _form, next) => {
 	// 設置頁面標題
 	if (to.meta?.title) {
 		document.title = `${to.meta.title} - EScheduler`;

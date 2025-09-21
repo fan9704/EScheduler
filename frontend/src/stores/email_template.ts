@@ -12,6 +12,7 @@ import type {
   EmailTaskResponse
 } from '@/models/email_template';
 import { emailTemplateService, emailTaskService } from '@/services/email_template';
+import schedulerService from '@/services/scheduler';
 
 export const useEmailTemplateStore = defineStore('emailTemplate', () => {
   // State
@@ -225,7 +226,7 @@ export const useEmailTemplateStore = defineStore('emailTemplate', () => {
     loading.value = true;
     error.value = null;
     try {
-      await emailTaskService.executeEmailTask(id);
+      await schedulerService.triggerTask(id);
     } catch (err) {
       error.value = err instanceof Error ? err.message : '執行 Email 任務失敗';
       throw err;
