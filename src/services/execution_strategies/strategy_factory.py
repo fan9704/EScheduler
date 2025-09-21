@@ -1,18 +1,21 @@
 from typing import Dict, Type, List
 
-from src.services.execution_strategies.rabbitmq_strategy import RabbitMQExecutionStrategy
 from . import ExecutionStrategy
 from .http_strategy import HttpExecutionStrategy
 from .webhook_strategy import WebhookExecutionStrategy
+from .email_strategy import EmailExecutionStrategy
+from .rabbitmq_strategy import RabbitMQExecutionStrategy
 
 
 class ExecutionStrategyFactory:
     """執行策略工廠"""
     
+    # 只存儲策略類別，不存儲實例
     _strategies: Dict[str, Type[ExecutionStrategy]] = {
         'http': HttpExecutionStrategy,
         'webhook': WebhookExecutionStrategy,
         'rabbitmq': RabbitMQExecutionStrategy,
+        'email': EmailExecutionStrategy,
     }
     
     @classmethod
@@ -24,6 +27,7 @@ class ExecutionStrategyFactory:
             raise ValueError(f"不支援的執行策略: {strategy_type}")
         
         strategy_class = cls._strategies[strategy_type]
+        # 策略類會在 __init__ 中自動從配置系統載入參數
         return strategy_class(**kwargs)
     
     @classmethod

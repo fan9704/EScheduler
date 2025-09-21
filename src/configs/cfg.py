@@ -1,6 +1,5 @@
 from os import environ
 from dotenv import load_dotenv
-from .smtp import get_smtp_settings
 
 load_dotenv()
 
@@ -17,20 +16,3 @@ ALLOW_ORIGINS = [
 ]
 
 TZ = environ.get("TZ", "Asia/Taipei")
-
-# SMTP 設定
-def get_settings():
-    """獲取應用程式設定"""
-    smtp_settings = get_smtp_settings()
-    
-    class Settings:
-        SMTP_HOST = smtp_settings.host
-        SMTP_PORT = smtp_settings.port
-        SMTP_USERNAME = smtp_settings.username
-        SMTP_PASSWORD = smtp_settings.password
-        SMTP_USE_TLS = smtp_settings.use_tls
-        SMTP_USE_SSL = smtp_settings.use_ssl
-        DEFAULT_FROM_EMAIL = smtp_settings.default_from_email
-        DEFAULT_FROM_NAME = smtp_settings.default_from_name
-    
-    return Settings()

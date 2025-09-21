@@ -5,6 +5,7 @@ import json
 from typing import Dict, Any
 from . import ExecutionStrategy
 from src.models.pydantic.strategy import ExecutionResult, WebhookResult
+from src.configs.strategy_config import get_webhook_config
 
 logger = logging.getLogger(__name__)
 
@@ -12,8 +13,15 @@ logger = logging.getLogger(__name__)
 class WebhookExecutionStrategy(ExecutionStrategy):
     """Webhook 執行策略"""
     
-    def __init__(self, timeout: int = 30):
-        self.timeout = aiohttp.ClientTimeout(total=timeout)
+    def __init__(self):
+        # 從統一配置系統載入 Webhook 配置
+        webhook_config = get_webhook_config()
+        
+        self.timeout = aiohttp.ClientTimeout(total=webhook_config.timeout)
+        self.max_retries = webhook_config.max_retries
+        self.verify_ssl = webhook_config.verify_ssl
+        
+        logger.info(f"WebhookExecutionStrategy 初始化完成 - timeout: {webhook_config.timeout}s, max_retries: {webhook_config.max_retries}")
     
     async def execute(self, target_arn: str, target_input: Dict[str, Any]) -> ExecutionResult:
         """執行 Webhook 調用"""
@@ -50,13 +58,21 @@ class WebhookExecutionStrategy(ExecutionStrategy):
                     payload_str.encode('utf-8'),
                     hashlib.sha256
                 ).hexdigest()
-                webhook_headers['X-Webhook-Signature'] = f"sha256={signature}"
+                webhook_headers['X-Webhook-Signature'] = f'sha256={signature}'
             
+            # 合併自定義 headers
             webhook_headers.update(headers)
             
-            logger.info(f"執行 Webhook 調用: {target_arn}")
-
-            async with aiohttp.ClientSession(timeout=self.timeout) as session:
+            logger.info(f"執行 Webhook {method} 請求: {target_arn}")
+            logger.info(f"請求體: {body}")
+            
+            # 使用配置的 SSL 驗證設置
+            connector = aiohttp.TCPConnector(ssl=self.verify_ssl)
+            
+            async with aiohttp.ClientSession(
+                timeout=self.timeout,
+                connector=connector
+            ) as session:
                 async with session.request(
                     method=method,
                     url=target_arn,
@@ -88,6 +104,7 @@ class WebhookExecutionStrategy(ExecutionStrategy):
             execution_time = asyncio.get_event_loop().time() - start_time
             return ExecutionResult(
                 success=False,
+                data=None,
                 message=f"Webhook 調用失敗: {str(e)}",
                 execution_time=execution_time
             )

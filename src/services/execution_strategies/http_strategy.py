@@ -4,6 +4,7 @@ import logging
 from typing import Dict, Any
 from . import ExecutionStrategy
 from src.models.pydantic.strategy import ExecutionResult, HTTPResult
+from src.configs.strategy_config import get_http_config
 
 logger = logging.getLogger(__name__)
 
@@ -11,8 +12,15 @@ logger = logging.getLogger(__name__)
 class HttpExecutionStrategy(ExecutionStrategy):
     """HTTP 請求執行策略"""
     
-    def __init__(self, timeout: int = 30):
-        self.timeout = aiohttp.ClientTimeout(total=timeout)
+    def __init__(self):
+        # 從統一配置系統載入 HTTP 配置
+        http_config = get_http_config()
+        
+        self.timeout = aiohttp.ClientTimeout(total=http_config.timeout)
+        self.max_retries = http_config.max_retries
+        self.verify_ssl = http_config.verify_ssl
+        
+        logger.info(f"HttpExecutionStrategy 初始化完成 - timeout: {http_config.timeout}s, max_retries: {http_config.max_retries}")
     
     async def execute(self, target_arn: str, target_input: Dict[str, Any]) -> ExecutionResult:
         """執行 HTTP 請求"""
@@ -42,7 +50,13 @@ class HttpExecutionStrategy(ExecutionStrategy):
             logger.info(f"請求參數: {params}")
             logger.info(f"請求頭: {default_headers}")
             
-            async with aiohttp.ClientSession(timeout=self.timeout) as session:
+            # 使用配置的 SSL 驗證設置
+            connector = aiohttp.TCPConnector(ssl=self.verify_ssl)
+            
+            async with aiohttp.ClientSession(
+                timeout=self.timeout, 
+                connector=connector
+            ) as session:
                 try:
                     async with session.request(
                         method=method,

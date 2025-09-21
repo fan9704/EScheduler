@@ -146,6 +146,38 @@ class EmailTemplateService:
             logger.error(f"預覽模板時發生錯誤: {str(e)}")
             raise ValidationError(f"預覽失敗: {str(e)}")
 
+    async def get_template_usage_stats(self, template_id: int, 
+                                     days: int = 30) -> Dict[str, Any]:
+        """獲取模板使用統計"""
+        template = await EmailTemplate.get_or_none(id=template_id)
+        if not template:
+            raise NotFoundError(f"模板 ID {template_id} 不存在")
+        
+        # 計算日期範圍
+        end_date = datetime.now()
+        start_date = end_date - datetime.timedelta(days=days)
+        
+        # 獲取使用記錄
+        usage_records = await EmailTemplateUsage.filter(
+            template_id=template_id,
+            used_at__gte=start_date,
+            used_at__lte=end_date
+        ).all()
+        
+        return {
+            "template_id": template_id,
+            "template_name": template.name,
+            "period_days": days,
+            "total_usage": len(usage_records),
+            "usage_by_day": [
+                {
+                    "date": record.used_at.date().isoformat(),
+                    "count": 1
+                }
+                for record in usage_records
+            ]
+        }
+
     def _validate_template_syntax(self, template_str: str) -> None:
         """驗證模板語法"""
         try:
