@@ -4,7 +4,9 @@ import asyncio
 
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from src.configs import OPENAPI_API_NAME, OPENAPI_API_VERSION, OPENAPI_API_DESCRIPTION, APPLICATION_PORT
+from fastapi.staticfiles import StaticFiles
+
+from src.configs import OPENAPI_API_NAME, OPENAPI_API_VERSION, OPENAPI_API_DESCRIPTION, APPLICATION_PORT, IS_CONTAINER
 from src.initializer import init, init_db
 from prometheus_fastapi_instrumentator import Instrumentator
 
@@ -49,7 +51,8 @@ app = FastAPI(
     description=OPENAPI_API_DESCRIPTION,
     lifespan=lifespan,
 )
-
+if IS_CONTAINER:
+    app.mount("/", StaticFiles(directory="frontend/dist", html=True), name="frontend")
 instrumentator.instrument(app)
 logger.info("開始應用程序初始化...")
 init(app)
