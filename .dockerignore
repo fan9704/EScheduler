@@ -1,0 +1,22 @@
+# Frontend
+frontend/node_modules
+frontend/.husky
+frontend/dist
+frontend/.idea
+frontend/.vscode
+frontend/.DS_Store
+frontend/.env
+frontend/.env.development
+frontend/.env.production
+# Backend
+.github
+.venv
+grafana_data
+logs
+pgadmin_data
+postgres-data
+.env
+.env.example
+.gitignore
+prometheus.yml
+*.md

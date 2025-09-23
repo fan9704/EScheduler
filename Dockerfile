@@ -1,3 +1,10 @@
+# Frontend
+FROM node:20 AS frontend-build
+WORKDIR /frontend
+COPY frontend/ .
+RUN npm install -g pnpm && pnpm install && pnpm build
+
+# Backend
 FROM python:3.12.9-slim AS builder
 
 WORKDIR /app
@@ -12,7 +19,7 @@ COPY pyproject.toml* uv.lock* /app/
 RUN uv venv && \
     uv sync --frozen --no-dev
 
-
+# Final stage
 FROM python:3.12.9-slim
 
 LABEL org.opencontainers.image.source=https://github.com/fan9704/EScheduler
@@ -27,12 +34,13 @@ RUN apt-get update && \
     mv /root/.local/bin/uv /usr/local/bin/uv
 
 COPY --from=builder /app/.venv /app/.venv
+COPY --from=frontend-build /frontend/dist /app/frontend/dist
 COPY . /app/
 
 ENV PATH="/app/.venv/bin:$PATH"
+ENV IS_CONTAINER=True
 ENV POSTGRES_USER=test
-ENV POSTGRES_PASSWORD=123456
-ENV POSTGRES_DB=drawing
+ENV POSTGRES_DB=db
 ENV POSTGRES_PORT=5432
 ENV POSTGRES_HOST=127.0.0.1
 ENV POSTGRES_TEST_DB=test

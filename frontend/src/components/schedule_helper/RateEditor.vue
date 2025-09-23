@@ -44,59 +44,65 @@
       <v-btn
         color="primary"
         block
+        size="large"
         :disabled="!isValid"
         @click="generateExpression"
       >
-        生成表達式
+        <v-icon class="mr-2">mdi-creation</v-icon>
+        生成 Rate 表達式
       </v-btn>
     </v-card-text>
   </v-card>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import type { RateExpressionRequest, TimeUnit } from '@/models/schedule_helper'
+import { computed, ref } from "vue";
+import { type RateExpressionRequest, TimeUnit } from "@/models/schedule_helper";
 
 const emit = defineEmits<{
-  generate: [request: RateExpressionRequest]
-}>()
+	generate: [request: RateExpressionRequest];
+}>();
 
-const rateValue = ref(5)
-const rateUnit = ref<TimeUnit>('minutes')
+const rateValue = ref(5);
+const rateUnit = ref<TimeUnit>(TimeUnit.MINUTES);
 
 const unitOptions = [
-  { title: '秒', value: 'seconds' },
-  { title: '分鐘', value: 'minutes' },
-  { title: '小時', value: 'hours' },
-  { title: '天', value: 'days' },
-]
+	{ title: "秒", value: "seconds" },
+	{ title: "分鐘", value: "minutes" },
+	{ title: "小時", value: "hours" },
+	{ title: "天", value: "days" },
+];
 
 const rules = {
-  required: (value: any) => !!value || '此欄位為必填',
-  positive: (value: number) => value > 0 || '數值必須大於0',
-}
+	required: (value: any) => !!value || "此欄位為必填",
+	positive: (value: number) => value > 0 || "數值必須大於0",
+};
 
 const description = computed(() => {
-  const unitMap: Record<string, string> = {
-    seconds: '秒',
-    minutes: '分鐘',
-    hours: '小時',
-    days: '天',
-  }
-  
-  return `每${rateValue.value}${unitMap[rateUnit.value] || rateUnit.value}執行一次`
-})
+	const unitMap: Record<string, string> = {
+		seconds: "秒",
+		minutes: "分鐘",
+		hours: "小時",
+		days: "天",
+	};
+
+	return `每${rateValue.value}${unitMap[rateUnit.value] || rateUnit.value}執行一次`;
+});
 
 const isValid = computed(() => {
-  return rateValue.value > 0 && rateUnit.value
-})
+	return rateValue.value > 0 && rateUnit.value;
+});
 
 const generateExpression = () => {
-  if (isValid.value) {
-    emit('generate', {
-      value: rateValue.value,
-      unit: rateUnit.value,
-    })
-  }
-}
+	if (isValid.value) {
+		console.log("生成 Rate 表達式:", {
+			value: rateValue.value,
+			unit: rateUnit.value,
+		}); // 調試用
+		emit("generate", {
+			value: rateValue.value,
+			unit: rateUnit.value,
+		});
+	}
+};
 </script>

@@ -22,7 +22,7 @@
         />
       </v-col>
     </v-row>
-    
+
     <v-row>
       <v-col
         v-for="template in filteredTemplates"
@@ -33,7 +33,7 @@
       >
         <v-card
           class="template-card"
-          :class="{ 'selected': selectedTemplate?.name === template.name }"
+          :class="{ selected: selectedTemplate?.name === template.name }"
           @click="selectTemplate(template)"
         >
           <v-card-title class="text-h6">
@@ -60,68 +60,90 @@
               </v-code>
             </div>
           </v-card-text>
+          <v-card-actions>
+            <v-btn
+              color="primary"
+              variant="outlined"
+              size="small"
+              block
+              @click.stop="useTemplate(template)"
+            >
+              <v-icon class="mr-2">mdi-check</v-icon>
+              使用此模板
+            </v-btn>
+          </v-card-actions>
         </v-card>
       </v-col>
     </v-row>
-    
+
     <div v-if="filteredTemplates.length === 0" class="text-center py-8">
       <v-icon size="64" color="grey-lighten-2">
         mdi-file-search-outline
       </v-icon>
-      <div class="text-h6 mt-2 text-medium-emphasis">
-        沒有找到匹配的模板
-      </div>
+      <div class="text-h6 mt-2 text-medium-emphasis">沒有找到匹配的模板</div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useScheduleHelperStore } from '@/stores/schedule_helper'
-import type { ScheduleTemplateResponse } from '@/models/schedule_helper'
+import { computed, ref } from "vue";
+import type {
+	ScheduleTemplateResponse,
+	ScheduleType,
+} from "@/models/schedule_helper";
+import { expression_template } from "@/templates/scheduler";
 
 const emit = defineEmits<{
-  select: [expression: string]
-}>()
+	select: [expression: string];
+}>();
 
-const scheduleHelperStore = useScheduleHelperStore()
-const { templates } = scheduleHelperStore
+// 直接用本地 JSON 作為模板資料，並將 type 轉換為 ScheduleType
+const templates = ref<ScheduleTemplateResponse[]>(
+	expression_template.map((t) => ({
+		...t,
+		type: t.type as ScheduleType,
+	})),
+);
 
-const selectedCategory = ref('')
-const searchKeyword = ref('')
-const selectedTemplate = ref<ScheduleTemplateResponse | null>(null)
+const selectedCategory = ref("");
+const searchKeyword = ref("");
+const selectedTemplate = ref<ScheduleTemplateResponse | null>(null);
 
 const categories = computed(() => {
-  const cats = [...new Set(templates.map(t => t.category))]
-  return cats.map(cat => ({ title: cat, value: cat }))
-})
+	const cats = [...new Set(templates.value.map((t) => t.category))];
+	return cats.map((cat) => ({ title: cat, value: cat }));
+});
 
 const filteredTemplates = computed(() => {
-  let result = templates
-  
-  if (selectedCategory.value) {
-    result = result.filter(t => t.category === selectedCategory.value)
-  }
-  
-  if (searchKeyword.value) {
-    const keyword = searchKeyword.value.toLowerCase()
-    result = result.filter(t => 
-      t.name.toLowerCase().includes(keyword) ||
-      t.description.toLowerCase().includes(keyword)
-    )
-  }
-  
-  return result
-})
+	let result = templates.value;
+
+	if (selectedCategory.value) {
+		result = result.filter((t) => t.category === selectedCategory.value);
+	}
+
+	if (searchKeyword.value) {
+		const keyword = searchKeyword.value.toLowerCase();
+		result = result.filter(
+			(t) =>
+				t.name.toLowerCase().includes(keyword) ||
+				t.description.toLowerCase().includes(keyword),
+		);
+	}
+
+	return result;
+});
 
 const selectTemplate = (template: ScheduleTemplateResponse) => {
-  selectedTemplate.value = template
-  emit('select', template.expression)
-}
+	selectedTemplate.value = template;
+	console.log("TemplateSelector: 選擇模板:", template.name);
+};
 
-onMounted(() => {
-  scheduleHelperStore.fetchTemplates()
-})
+const useTemplate = (template: ScheduleTemplateResponse) => {
+	console.log("TemplateSelector: 使用模板表達式:", template.expression);
+	selectedTemplate.value = template;
+	// 發送選擇事件
+	emit("select", template.expression);
+};
 </script>
 
 <style scoped>

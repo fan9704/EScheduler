@@ -4,7 +4,9 @@ import asyncio
 
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from src.configs import OPENAPI_API_NAME, OPENAPI_API_VERSION, OPENAPI_API_DESCRIPTION, APPLICATION_PORT
+from fastapi.staticfiles import StaticFiles
+
+from src.configs import OPENAPI_API_NAME, OPENAPI_API_VERSION, OPENAPI_API_DESCRIPTION, APPLICATION_PORT, IS_CONTAINER
 from src.initializer import init, init_db
 from prometheus_fastapi_instrumentator import Instrumentator
 
@@ -24,7 +26,9 @@ async def lifespan(app: FastAPI):
     
     # 🔥 啟動排程引擎
     try:
-        from src.services.scheduler_engine import scheduler_engine
+        from src.dependencies.utils import get_scheduler_engine
+        from src.services.scheduler_engine import SchedulerEngine
+        scheduler_engine: SchedulerEngine = get_scheduler_engine()
         await scheduler_engine.start()
         logger.info("排程引擎啟動成功")
     except Exception as e:
@@ -47,7 +51,8 @@ app = FastAPI(
     description=OPENAPI_API_DESCRIPTION,
     lifespan=lifespan,
 )
-
+if IS_CONTAINER:
+    app.mount("/", StaticFiles(directory="frontend/dist", html=True), name="frontend")
 instrumentator.instrument(app)
 logger.info("開始應用程序初始化...")
 init(app)

@@ -79,60 +79,76 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useScheduleHelperStore } from '@/stores/schedule_helper'
-import type { ScheduleValidationRequest } from '@/models/schedule_helper'
+import { ref, watch } from "vue";
+import type { ScheduleValidationRequest } from "@/models/schedule_helper";
+import { useScheduleHelperStore } from "@/stores/schedule_helper";
+
+const props = defineProps<{
+	initialExpression?: string;
+}>();
 
 const emit = defineEmits<{
-  validate: [request: ScheduleValidationRequest]
-}>()
+	validate: [request: ScheduleValidationRequest];
+}>();
 
-const scheduleHelperStore = useScheduleHelperStore()
-const { validationResult, loading } = scheduleHelperStore
+const scheduleHelperStore = useScheduleHelperStore();
+const { validationResult, loading } = scheduleHelperStore;
 
-const expression = ref('')
+const expression = ref("");
+
+// 監聽初始表達式
+watch(
+	() => props.initialExpression,
+	(newExpression) => {
+		if (newExpression) {
+			expression.value = newExpression;
+			validateExpression();
+		}
+	},
+	{ immediate: true },
+);
 
 const rules = {
-  required: (value: string) => !!value.trim() || '請輸入表達式',
-}
+	required: (value: string) => !!value.trim() || "請輸入表達式",
+};
 
 const examples = [
-  {
-    expression: 'cron(0 9 * * 1-5)',
-    description: '工作日早上9點執行',
-  },
-  {
-    expression: 'rate(5 minutes)',
-    description: '每5分鐘執行一次',
-  },
-  {
-    expression: 'cron(0 */2 * * *)',
-    description: '每2小時執行一次',
-  },
-  {
-    expression: 'rate(1 hour)',
-    description: '每小時執行一次',
-  },
-  {
-    expression: 'cron(0 0 1 * *)',
-    description: '每月1號午夜執行',
-  },
-  {
-    expression: 'rate(30 seconds)',
-    description: '每30秒執行一次',
-  },
-]
+	{
+		expression: "cron(0 9 * * 1-5)",
+		description: "工作日早上9點執行",
+	},
+	{
+		expression: "rate(5 minutes)",
+		description: "每5分鐘執行一次",
+	},
+	{
+		expression: "cron(0 */2 * * *)",
+		description: "每2小時執行一次",
+	},
+	{
+		expression: "rate(1 hour)",
+		description: "每小時執行一次",
+	},
+	{
+		expression: "cron(0 0 1 * *)",
+		description: "每月1號午夜執行",
+	},
+	{
+		expression: "rate(30 seconds)",
+		description: "每30秒執行一次",
+	},
+];
 
 const validateExpression = async () => {
-  if (expression.value.trim()) {
-    const request = { expression: expression.value.trim() }
-    await scheduleHelperStore.validateExpression(request)
-    emit('validate', request)
-  }
-}
+	if (expression.value.trim()) {
+		const request = { expression: expression.value.trim() };
+		await scheduleHelperStore.validateExpression(request);
+		emit("validate", request);
+	}
+};
 
 const useExample = (exampleExpression: string) => {
-  expression.value = exampleExpression
-  validateExpression()
-}
+	expression.value = exampleExpression;
+	validateExpression();
+};
 </script>

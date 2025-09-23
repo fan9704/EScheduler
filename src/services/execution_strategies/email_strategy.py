@@ -4,7 +4,8 @@ import logging
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from typing import Dict, Any, List
-from . import ExecutionStrategy, ExecutionResult
+from . import ExecutionStrategy
+from src.models.pydantic.strategy import ExecutionResult
 
 logger = logging.getLogger(__name__)
 

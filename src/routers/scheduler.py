@@ -1,5 +1,5 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, Query, Path
+from fastapi import APIRouter, Depends, Query, Path, HTTPException
 from fastapi.responses import JSONResponse
 
 from src.services.scheduler import SchedulerService
@@ -13,7 +13,7 @@ from src.dependencies.services import get_scheduler_service
 router = APIRouter()
 
 
-@router.post("/", response_model=ScheduledTaskResponse)
+@router.post("", response_model=ScheduledTaskResponse)
 async def create_task(
     task_data: ScheduledTaskCreate,
     service: SchedulerService = Depends(get_scheduler_service)
@@ -22,7 +22,7 @@ async def create_task(
     return await service.create_task(task_data)
 
 
-@router.get("/", response_model=List[ScheduledTaskResponse])
+@router.get("", response_model=List[ScheduledTaskResponse])
 async def get_all_tasks(
     state: Optional[TaskState] = Query(None, description="任務狀態過濾"),
     service: SchedulerService = Depends(get_scheduler_service)
@@ -97,15 +97,26 @@ async def trigger_task(
     task_id: int = Path(..., description="任務 ID"),
     service: SchedulerService = Depends(get_scheduler_service)
 ) -> JSONResponse:
-    """手動觸發任務執行"""
+    """立即觸發任務執行"""
     try:
         success = await service.trigger_task_now(task_id)
+        if success:
+            return JSONResponse(
+                status_code=200,
+                content={"message": "任務觸發成功", "task_id": task_id}
+            )
+        else:
+            return JSONResponse(
+                status_code=500,
+                content={"message": "任務執行失敗", "task_id": task_id}
+            )
+    except HTTPException as e:
         return JSONResponse(
-            content={"message": "任務已成功觸發", "task_id": task_id},
-            status_code=200 if success else 400
+            status_code=e.status_code,
+            content={"message": e.detail, "task_id": task_id}
         )
     except Exception as e:
         return JSONResponse(
-            content={"message": f"觸發任務失敗: {str(e)}", "task_id": task_id},
-            status_code=500
+            status_code=500,
+            content={"message": f"觸發任務失敗: {str(e)}", "task_id": task_id}
         )

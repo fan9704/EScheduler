@@ -18,15 +18,15 @@
 </template>
 
 <script setup lang="ts">
-import { useTheme } from 'vuetify'
+import { useTheme } from "vuetify";
 
 defineEmits<{
-  'toggle-drawer': []
-}>()
+	"toggle-drawer": [];
+}>();
 
-const theme = useTheme()
+const theme = useTheme();
 
 const toggleTheme = () => {
-  theme.global.name.value = theme.global.current.value.dark ? 'light' : 'dark'
-}
+	theme.global.name.value = theme.global.current.value.dark ? "light" : "dark";
+};
 </script>

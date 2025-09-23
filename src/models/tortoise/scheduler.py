@@ -1,5 +1,5 @@
 from tortoise import fields, models
-from datetime import datetime
+from src.models.enum.scheduler import TaskState, TargetType, ExecutionStatus
 
 
 class ScheduledTask(models.Model):
@@ -12,13 +12,13 @@ class ScheduledTask(models.Model):
     schedule_expression = fields.CharField(max_length=255, description="排程表達式 (cron 或 rate)")
     timezone = fields.CharField(max_length=50, default="Asia/Taipei", description="時區")
     
-    # 目標相關
-    target_type = fields.CharField(max_length=50, description="目標類型 (http, lambda, sqs 等)")
+    # 目標相關 - 使用 TargetType Enum
+    target_type = fields.CharEnumField(TargetType, description="目標類型")
     target_arn = fields.CharField(max_length=500, description="目標 ARN 或 URL")
     target_input = fields.JSONField(null=True, description="目標輸入參數")
     
-    # 狀態管理
-    state = fields.CharField(max_length=20, default="ENABLED", description="任務狀態")
+    # 狀態管理 - 使用 TaskState Enum
+    state = fields.CharEnumField(TaskState, default=TaskState.ENABLED, description="任務狀態")
     last_execution_time = fields.DatetimeField(null=True, description="最後執行時間")
     next_execution_time = fields.DatetimeField(null=True, description="下次執行時間")
     execution_count = fields.IntField(default=0, description="執行次數")
@@ -45,8 +45,8 @@ class TaskExecution(models.Model):
     # 修復外鍵引用 - 使用正確的應用名稱格式
     task = fields.ForeignKeyField("models.ScheduledTask", related_name="executions")
     
-    # 執行狀態
-    status = fields.CharField(max_length=20, description="執行狀態")
+    # 執行狀態 - 使用 ExecutionStatus Enum
+    status = fields.CharEnumField(ExecutionStatus, description="執行狀態")
     started_at = fields.DatetimeField(description="開始時間")
     completed_at = fields.DatetimeField(null=True, description="完成時間")
     

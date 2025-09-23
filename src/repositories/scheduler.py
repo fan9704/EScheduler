@@ -1,21 +1,19 @@
-from typing import List, Optional
+from typing import List
 from datetime import datetime
-from src.repositories.base import Repository
-from src.models.tortoise.scheduler import ScheduledTask, TaskExecution
+from zoneinfo import ZoneInfo
+
 from src.models.enum.scheduler import TaskState, ExecutionStatus
+from src.models.tortoise.scheduler import ScheduledTask, TaskExecution
+from src.repositories.base import Repository
 
 
 class ScheduledTaskRepository(Repository):
     def __init__(self):
         self.model = ScheduledTask
 
-    async def get_by_name(self, name: str) -> Optional[ScheduledTask]:
+    async def get_by_name(self, name: str) -> ScheduledTask:
         """根據名稱獲取任務"""
         return await self.model.filter(name=name).first()
-
-    async def get_enabled_tasks(self) -> List[ScheduledTask]:
-        """獲取所有啟用的任務"""
-        return await self.model.filter(state=TaskState.ENABLED)
 
     async def get_tasks_by_state(self, state: TaskState) -> List[ScheduledTask]:
         """根據狀態獲取任務"""
@@ -44,11 +42,24 @@ class ScheduledTaskRepository(Repository):
     async def search_tasks(self, keyword: str) -> List[ScheduledTask]:
         """搜索任務"""
         return await self.model.filter(name__icontains=keyword)
+    
+    # Statistic methods
+    async def count_tasks_by_state(self, state: TaskState) -> int:
+        """統計特定狀態的任務數量"""
+        return await self.model.filter(state=state).count()
+    async def count_all_tasks(self) -> int:
+        """統計所有任務數量"""
+        return await self.model.all().count()
 
 
 class TaskExecutionRepository(Repository):
     def __init__(self):
         self.model = TaskExecution
+
+    def _get_timezone_aware_now(self, timezone: str = "Asia/Taipei") -> datetime:
+        """獲取帶時區的當前時間"""
+        tz = ZoneInfo(timezone)
+        return datetime.now(tz)
 
     async def get_by_task_id(self, task_id: int) -> List[TaskExecution]:
         """獲取特定任務的執行記錄"""
@@ -75,7 +86,7 @@ class TaskExecutionRepository(Repository):
         """更新執行結果"""
         update_data = {
             "status": status,
-            "completed_at": datetime.now()
+            "completed_at": self._get_timezone_aware_now()  # 使用帶時區的時間
         }
         if response_code is not None:
             update_data["response_code"] = response_code
@@ -85,3 +96,14 @@ class TaskExecutionRepository(Repository):
             update_data["error_message"] = error_message
             
         await self.model.filter(id=execution_id).update(**update_data)
+
+    async def count_today_executions(self) -> int:
+        """統計今天的執行次數"""
+        now = self._get_timezone_aware_now()
+        start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_of_day = now.replace(hour=23, minute=59, second=59, microsecond=999999)
+        
+        return await self.model.filter(
+            started_at__gte=start_of_day,
+            started_at__lte=end_of_day
+        ).count()

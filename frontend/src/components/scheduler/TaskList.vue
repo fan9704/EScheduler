@@ -14,14 +14,10 @@
         >
           創建任務
         </v-btn>
-        <v-btn
-          icon="mdi-refresh"
-          variant="outlined"
-          @click="refreshTasks"
-        />
+        <v-btn icon="mdi-refresh" variant="outlined" @click="refreshTasks" />
       </v-col>
     </v-row>
-    
+
     <!-- 搜索和篩選 -->
     <v-row class="mb-4">
       <v-col cols="12" md="6">
@@ -56,7 +52,7 @@
         />
       </v-col>
     </v-row>
-    
+
     <!-- 任務列表 -->
     <v-card>
       <v-data-table
@@ -67,31 +63,29 @@
         class="elevation-0"
       >
         <template #item.state="{ item }">
-          <v-chip
-            :color="getStateColor(item.state)"
-            size="small"
-            variant="flat"
-          >
-            {{ getStateText(item.state) }}
-          </v-chip>
+          <v-switch
+            v-model="item.state"
+            :color="item.state === 'ENABLED' ? 'success' : 'grey'"
+            :label="getStateTextComputed(item.state)"
+            false-value="DISABLED"
+            true-value="ENABLED"
+            @change="updateTaskState(item.id, item.state)"
+          ></v-switch>
         </template>
-        
+
         <template #item.target_type="{ item }">
-          <v-chip
-            size="small"
-            variant="outlined"
-          >
+          <v-chip size="small" variant="outlined">
             {{ item.target_type.toUpperCase() }}
           </v-chip>
         </template>
-        
+
         <template #item.next_execution_time="{ item }">
           <span v-if="item.next_execution_time" class="text-caption">
             {{ formatDateTime(item.next_execution_time) }}
           </span>
           <span v-else class="text-caption text-medium-emphasis">-</span>
         </template>
-        
+
         <template #item.actions="{ item }">
           <div class="d-flex gap-1">
             <v-btn
@@ -122,133 +116,175 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { useSchedulerStore } from '@/stores/scheduler'
-import { TaskState } from '@/models/scheduler'
-import dayjs from 'dayjs'
+import dayjs from "dayjs";
+import { computed, onMounted, ref, watch } from "vue";
+import { useRouter } from "vue-router";
+import {
+	type ScheduledTaskResponse,
+	TaskState,
+	type TaskStateUpdateRequest,
+} from "@/models/scheduler";
+import { useSchedulerStore } from "@/stores/scheduler";
 
-const router = useRouter()
-const schedulerStore = useSchedulerStore()
+const router = useRouter();
+const schedulerStore = useSchedulerStore();
 
-const searchKeyword = ref('')
-const statusFilter = ref('')
-const typeFilter = ref('')
+const searchKeyword = ref("");
+const statusFilter = ref("");
+const typeFilter = ref("");
 
-const { tasks, loading } = schedulerStore
+const { loading } = schedulerStore;
+const tasks = ref<ScheduledTaskResponse[]>([]);
 
 const headers = [
-  { title: '任務名稱', key: 'name', sortable: true },
-  { title: '狀態', key: 'state', sortable: true },
-  { title: '類型', key: 'target_type', sortable: true },
-  { title: '排程表達式', key: 'schedule_expression', sortable: false },
-  { title: '下次執行', key: 'next_execution_time', sortable: true },
-  { title: '執行次數', key: 'execution_count', sortable: true },
-  { title: '操作', key: 'actions', sortable: false, width: 120 },
-]
+	{ title: "任務名稱", key: "name", sortable: true },
+	{ title: "狀態", key: "state", sortable: true },
+	{ title: "類型", key: "target_type", sortable: true },
+	{ title: "排程表達式", key: "schedule_expression", sortable: false },
+	{ title: "下次執行", key: "next_execution_time", sortable: true },
+	{ title: "執行次數", key: "execution_count", sortable: true },
+	{ title: "操作", key: "actions", sortable: false, width: 120 },
+];
 
 const statusOptions = [
-  { title: '啟用', value: TaskState.ENABLED },
-  { title: '禁用', value: TaskState.DISABLED },
-  { title: '暫停', value: TaskState.PAUSED },
-]
+	{ title: "啟用", value: TaskState.ENABLED },
+	{ title: "禁用", value: TaskState.DISABLED },
+	{ title: "暫停", value: TaskState.PAUSED },
+];
 
 const typeOptions = [
-  { title: 'HTTP', value: 'http' },
-  { title: 'Webhook', value: 'webhook' },
-  { title: 'RabbitMQ', value: 'rabbitmq' },
-  { title: 'Email', value: 'email' },
-]
+	{ title: "HTTP", value: "http" },
+	{ title: "Webhook", value: "webhook" },
+	{ title: "RabbitMQ", value: "rabbitmq" },
+	{ title: "Email", value: "email" },
+];
 
+watch(
+	() => schedulerStore.tasks,
+	(newTasks) => {
+		tasks.value = newTasks;
+	},
+	{ immediate: true },
+);
 const filteredTasks = computed(() => {
-  let result = tasks
-  
-  if (searchKeyword.value) {
-    result = result.filter(task => 
-      task.name.toLowerCase().includes(searchKeyword.value.toLowerCase()) ||
-      (task.description && task.description.toLowerCase().includes(searchKeyword.value.toLowerCase()))
-    )
-  }
-  
-  if (statusFilter.value) {
-    result = result.filter(task => task.state === statusFilter.value)
-  }
-  
-  if (typeFilter.value) {
-    result = result.filter(task => task.target_type === typeFilter.value)
-  }
-  
-  return result
-})
+	let result = schedulerStore.tasks;
+
+	if (searchKeyword.value) {
+		result = result.filter(
+			(task) =>
+				task.name.toLowerCase().includes(searchKeyword.value.toLowerCase()) ||
+				(task.description &&
+					task.description
+						.toLowerCase()
+						.includes(searchKeyword.value.toLowerCase())),
+		);
+	}
+
+	if (statusFilter.value) {
+		result = result.filter((task) => task.state === statusFilter.value);
+	}
+
+	if (typeFilter.value) {
+		result = result.filter((task) => task.target_type === typeFilter.value);
+	}
+
+	return result;
+});
 
 const getStateColor = (state: string) => {
-  switch (state) {
-    case TaskState.ENABLED:
-      return 'success'
-    case TaskState.DISABLED:
-      return 'error'
-    case TaskState.PAUSED:
-      return 'warning'
-    default:
-      return 'default'
-  }
-}
+	switch (state) {
+		case TaskState.ENABLED:
+			return "success";
+		case TaskState.DISABLED:
+			return "error";
+		case TaskState.PAUSED:
+			return "warning";
+		default:
+			return "default";
+	}
+};
 
 const getStateText = (state: string) => {
-  switch (state) {
-    case TaskState.ENABLED:
-      return '啟用'
-    case TaskState.DISABLED:
-      return '禁用'
-    case TaskState.PAUSED:
-      return '暫停'
-    default:
-      return state
-  }
-}
+	switch (state) {
+		case TaskState.ENABLED:
+			return "啟用";
+		case TaskState.DISABLED:
+			return "禁用";
+		case TaskState.PAUSED:
+			return "暫停";
+		default:
+			return state;
+	}
+};
+const getStateTextComputed = computed(() => {
+	return (state: string) => {
+		switch (state) {
+			case TaskState.ENABLED:
+				return "啟用";
+			case TaskState.DISABLED:
+				return "禁用";
+			case TaskState.PAUSED:
+				return "暫停";
+			default:
+				return "禁用";
+		}
+	};
+});
 
 const formatDateTime = (dateTime: string) => {
-  return dayjs(dateTime).format('YYYY-MM-DD HH:mm:ss')
-}
+	return dayjs(dateTime).format("YYYY-MM-DD HH:mm:ss");
+};
 
 const refreshTasks = async () => {
-  await schedulerStore.fetchTasks()
-}
+	await schedulerStore.fetchTasks();
+};
 
 const searchTasks = async () => {
-  if (searchKeyword.value.trim()) {
-    await schedulerStore.searchTasks(searchKeyword.value.trim())
-  } else {
-    await schedulerStore.fetchTasks()
-  }
-}
+	if (searchKeyword.value.trim()) {
+		await schedulerStore.searchTasks(searchKeyword.value.trim());
+	} else {
+		await schedulerStore.fetchTasks();
+	}
+};
+
+const updateTaskState = async (id: number, state: TaskState) => {
+	try {
+		const updateStateRequest: TaskStateUpdateRequest = {
+			state: state,
+		};
+		await schedulerStore.updateTaskState(id, updateStateRequest);
+		// 顯示成功消息
+	} catch (error) {
+		// 顯示錯誤消息
+	}
+};
 
 const triggerTask = async (id: number) => {
-  try {
-    await schedulerStore.triggerTask(id)
-    // 顯示成功消息
-  } catch (error) {
-    // 顯示錯誤消息
-  }
-}
+	try {
+		await schedulerStore.triggerTask(id);
+		// 顯示成功消息
+	} catch (error) {
+		// 顯示錯誤消息
+	}
+};
 
 const editTask = (id: number) => {
-  router.push(`/tasks/${id}/edit`)
-}
+	router.push(`/tasks/${id}/edit`);
+};
 
 const deleteTask = async (id: number) => {
-  // 顯示確認對話框
-  if (confirm('確定要刪除這個任務嗎？')) {
-    try {
-      await schedulerStore.deleteTask(id)
-      // 顯示成功消息
-    } catch (error) {
-      // 顯示錯誤消息
-    }
-  }
-}
+	// 顯示確認對話框
+	if (confirm("確定要刪除這個任務嗎？")) {
+		try {
+			await schedulerStore.deleteTask(id);
+			// 顯示成功消息
+		} catch (error) {
+			// 顯示錯誤消息
+		}
+	}
+};
 
 onMounted(() => {
-  schedulerStore.fetchTasks()
-})
+	schedulerStore.fetchTasks();
+});
 </script>
