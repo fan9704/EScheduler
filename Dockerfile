@@ -21,6 +21,11 @@ RUN uv venv && \
 
 # Final stage
 FROM python:3.12.9-slim
+
+LABEL org.opencontainers.image.source=https://github.com/fan9704/EScheduler
+LABEL org.opencontainers.image.description="This is EScheduler Docker Image."
+LABEL org.opencontainers.image.licenses=MIT
+
 WORKDIR /app
 
 RUN apt-get update && \
