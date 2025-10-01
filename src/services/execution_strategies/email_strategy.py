@@ -248,7 +248,7 @@ class EmailExecutionStrategy(ExecutionStrategy):
             
             # 添加文本內容
             if body:
-                text_part = MIMEText(body, 'plain', 'utf-8')
+                text_part = MIMEText(body, 'html', 'utf-8')
                 message.attach(text_part)
             
             # 添加 HTML 內容
