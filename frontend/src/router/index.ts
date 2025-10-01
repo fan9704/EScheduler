@@ -43,6 +43,49 @@ const routes: RouteRecordRaw[] = [
 			title: "編輯任務",
 		},
 	},
+	// Email 相關路由
+	{
+		path: "/email-tasks",
+		name: "EmailTaskList",
+		component: () => import("@/views/EmailTaskList.vue"),
+		meta: {
+			title: "Email 任務",
+			icon: "mdi-email-outline",
+		},
+	},
+	{
+		path: "/email-templates",
+		name: "EmailTemplateList",
+		component: () => import("@/views/EmailTemplateList.vue"),
+		meta: {
+			title: "Email 模板",
+			icon: "mdi-email-edit-outline",
+		},
+	},
+	{
+		path: "/email-templates/create",
+		name: "EmailTemplateCreate",
+		component: () => import("@/views/EmailTemplateCreate.vue"),
+		meta: {
+			title: "創建 Email 模板",
+		},
+	},
+    {
+        path: "/email-templates/:id/edit",
+        name: "EmailTemplateEdit",
+        component: () => import("@/views/EmailTemplateEdit.vue"),
+        meta: {
+            title: "預覽 Email 模板",
+        },
+    },
+	{
+		path: "/email-templates/:id/preview",
+		name: "EmailTemplatePreview",
+		component: () => import("@/views/EmailTemplatePreview.vue"),
+		meta: {
+			title: "預覽 Email 模板",
+		},
+	},
 	{
 		path: "/schedule-helper",
 		name: "ScheduleHelper",
@@ -68,14 +111,11 @@ const router = createRouter({
 });
 
 // 路由守衛
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _form, next) => {
 	// 設置頁面標題
 	if (to.meta?.title) {
 		document.title = `${to.meta.title} - EScheduler`;
-	} else {
-		document.title = "EScheduler";
 	}
-
 	next();
 });
 

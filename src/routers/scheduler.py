@@ -25,10 +25,11 @@ async def create_task(
 @router.get("", response_model=List[ScheduledTaskResponse])
 async def get_all_tasks(
     state: Optional[TaskState] = Query(None, description="任務狀態過濾"),
+    target_type: Optional[str] = Query(None, description="目標類型過濾 (如: email)"),
     service: SchedulerService = Depends(get_scheduler_service)
 ) -> List[ScheduledTaskResponse]:
     """獲取所有排程任務"""
-    return await service.get_all_tasks(state)
+    return await service.get_all_tasks(state, target_type)
 
 
 @router.get("/stats", response_model=SchedulerStatsResponse)

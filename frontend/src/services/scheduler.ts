@@ -11,7 +11,7 @@ class SchedulerService {
 	private readonly basePath = "/scheduler";
 
 	async getTasks(): Promise<ScheduledTaskResponse[]> {
-		return apiService.get<ScheduledTaskResponse[]>(`${this.basePath}/`);
+		return apiService.get<ScheduledTaskResponse[]>(`${this.basePath}`);
 	}
 
 	async getTask(id: number): Promise<ScheduledTaskResponse> {
@@ -22,7 +22,7 @@ class SchedulerService {
 		taskData: ScheduledTaskCreate,
 	): Promise<ScheduledTaskResponse> {
 		return apiService.post<ScheduledTaskResponse>(
-			`${this.basePath}/`,
+			`${this.basePath}`,
 			taskData,
 		);
 	}
