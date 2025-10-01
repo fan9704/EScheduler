@@ -2,6 +2,7 @@
 
 <div align="center">
   <h3>🚀 強大的分散式排程任務管理平台</h3>
+      <img src="./frontend/src/assets/icons/logo-dark.png" alt="EScheduler Logo" width="160"/>
   <p>AWS EventBridge Alternative 基於 FastAPI + Vue3 + Vuetify 構建的現代化排程系統</p>
 </div>
 
@@ -35,9 +36,10 @@
 
 1. **uv** - Python 套件管理器
 2. **Python 3.12+** - 程式語言
-3. **Node.js 18+** - 前端開發環境
+3. **Node.js 22+** - 前端開發環境
 4. **Docker** - 容器化平台
 5. **Docker Compose** - 多容器應用管理
+6. **pnpm** - 前端套件管理器
 
 ### UV 安裝
 

@@ -6,15 +6,15 @@
         <p class="text-body-2 text-medium-emphasis">創建新的排程任務</p>
       </v-col>
     </v-row>
-    
-    <TaskForm 
+
+    <TaskForm
       ref="taskFormRef"
       :initial-data="initialData"
       @submit="handleSubmit" 
       @cancel="handleCancel"
       @open-schedule-wizard="handleOpenScheduleWizard"
     />
-    
+
     <!-- 排程表達式精靈對話框 -->
     <ScheduleWizardDialog
       v-model="showScheduleWizard"
@@ -77,27 +77,27 @@ const handleCancel = () => {
 };
 
 const handleOpenScheduleWizard = (
-	currentFormData: Partial<ScheduledTaskCreate>,
+  currentFormData: Partial<ScheduledTaskCreate>
 ) => {
-	console.log("TaskCreate: 打開排程精靈，暫存數據:", currentFormData);
-	// 暫存當前表單數據
-	tempFormData.value = { ...currentFormData };
-	showScheduleWizard.value = true;
+  console.log("TaskCreate: 打開排程精靈，暫存數據:", currentFormData);
+  // 暫存當前表單數據
+  tempFormData.value = { ...currentFormData };
+  showScheduleWizard.value = true;
 };
 
 const handleExpressionCreated = (expression: string) => {
-	console.log("TaskCreate: 收到表達式:", expression);
-	console.log("TaskCreate: 當前暫存數據:", tempFormData.value);
+  console.log("TaskCreate: 收到表達式:", expression);
+  console.log("TaskCreate: 當前暫存數據:", tempFormData.value);
 
-	// 關閉精靈對話框
-	showScheduleWizard.value = false;
+  // 關閉精靈對話框
+  showScheduleWizard.value = false;
 
-	// 直接調用 TaskForm 的方法來設置表達式
-	if (taskFormRef.value) {
-		taskFormRef.value.setScheduleExpression(expression);
-		console.log("TaskCreate: 已調用 TaskForm.setScheduleExpression");
-	} else {
-		console.error("TaskCreate: taskFormRef 不存在");
-	}
+  // 直接調用 TaskForm 的方法來設置表達式
+  if (taskFormRef.value) {
+    taskFormRef.value.setScheduleExpression(expression);
+    console.log("TaskCreate: 已調用 TaskForm.setScheduleExpression");
+  } else {
+    console.error("TaskCreate: taskFormRef 不存在");
+  }
 };
 </script>

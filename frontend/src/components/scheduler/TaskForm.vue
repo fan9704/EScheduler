@@ -87,12 +87,37 @@
               density="compact"
             />
           </v-col>
-          <v-col cols="12" md="12" v-if="formData.target_type === 'webhook'" class="pa-6">
+          <v-col
+            cols="12"
+            md="12"
+            v-if="formData.target_type === 'webhook'"
+            class="pa-6"
+          >
             <h2>選擇 Webhook Template</h2>
-            <v-item-group v-model="selectedWebhookTemplate" mandatory class="d-flex">
-              <v-item v-for="template in webhook_template" v-slot="{ isSelected, toggle }" :key="template.id" >
-                <v-card @click="toggle" class="cursor-pointer ma-2 pa-2" :class="isSelected? 'selected-card' : ''" style="flex:1;display: flex;">
-                  <v-img @click="httpBodyText = JSON.stringify(template.body); formatJSON()" :src="template.image" height="100px">
+            <v-item-group
+              v-model="selectedWebhookTemplate"
+              mandatory
+              class="d-flex"
+            >
+              <v-item
+                v-for="template in webhook_template"
+                v-slot="{ isSelected, toggle }"
+                :key="template.id"
+              >
+                <v-card
+                  @click="toggle"
+                  class="cursor-pointer ma-2 pa-2"
+                  :class="isSelected ? 'selected-card' : ''"
+                  style="flex: 1; display: flex"
+                >
+                  <v-img
+                    @click="
+                      httpBodyText = JSON.stringify(template.body);
+                      formatJSON();
+                    "
+                    :src="template.image"
+                    height="100px"
+                  >
                     {{ template.name }}
                   </v-img>
                 </v-card>
@@ -100,12 +125,30 @@
             </v-item-group>
           </v-col>
           <!-- HTTP 類型時顯示 Method、Header、Body -->
-          <template v-if="formData.target_type === 'http' || formData.target_type === 'webhook'">
+          <template
+            v-if="
+              formData.target_type === 'http' ||
+              formData.target_type === 'webhook' ||
+              formData.target_type === 'rabbitmq'
+            "
+          >
             <v-col cols="12" md="3" v-if="formData.target_type === 'http'">
               <v-select
                 v-model="httpMethod"
                 :items="httpMethodOptions"
                 label="HTTP Method"
+                variant="outlined"
+                density="compact"
+                :rules="[rules.required]"
+                required
+              />
+            </v-col>
+            <v-col cols="12" md="3" v-if="formData.target_type === 'rabbitmq'">
+              <v-select
+                v-model="rabbitmqMode"
+                :items="rabbitmqModeOptions"
+                label="RabbitMQ 模式"
+                placeholder="請選擇模式"
                 variant="outlined"
                 density="compact"
                 :rules="[rules.required]"
@@ -419,14 +462,14 @@ import type {EmailTemplatePreviewResponse} from "@/models/email_template";
 import Codemirror from "codemirror-editor-vue3";
 
 const props = defineProps<{
-	initialData?: ScheduledTaskResponse | Partial<ScheduledTaskCreate>;
-	loading?: boolean;
+  initialData?: ScheduledTaskResponse | Partial<ScheduledTaskCreate>;
+  loading?: boolean;
 }>();
 
 const emit = defineEmits<{
-	submit: [data: ScheduledTaskCreate];
-	cancel: [];
-	"open-schedule-wizard": [formData: Partial<ScheduledTaskCreate>];
+  submit: [data: ScheduledTaskCreate];
+  cancel: [];
+  "open-schedule-wizard": [formData: Partial<ScheduledTaskCreate>];
 }>();
 
 // Router
@@ -440,14 +483,14 @@ const targetInputText = ref("");
 const targetInputError = ref("");
 const cmRef = ref();
 const cmOptions = reactive({
-	mode: "application/json",
-	theme: "tomorrow-night-bright",
-	lineNumbers: true,
-	lineWiseCopyCut: true,
-	gutters: ["CodeMirror-lint-markers"],
-	autoCloseBrackets: true,
-	matchBrackets: true,
-	lint: true,
+  mode: "application/json",
+  theme: "tomorrow-night-bright",
+  lineNumbers: true,
+  lineWiseCopyCut: true,
+  gutters: ["CodeMirror-lint-markers"],
+  autoCloseBrackets: true,
+  matchBrackets: true,
+  lint: true,
 });
 
 // HTTP Method 欄位
@@ -456,24 +499,32 @@ const httpMethodOptions = ["GET", "POST", "PUT", "DELETE", "PATCH"];
 const httpBodyText = ref(JSON.stringify(props.initialData?.target_input) || "");
 const httpBodyError = ref("");
 
+// RabbitMQ 欄位
+const rabbitmqMode = ref("");
+const rabbitmqModeOptions = [
+  { title: "Direct", value: "direct" },
+  { title: "Fanout", value: "fanout" },
+  { title: "Topic", value: "topic" },
+];
+
 // HTTP Headers 欄位
 const headerRows = ref([{ key: "", value: "" }]);
 const commonHeaders = [
-	"Authorization",
-	"Host",
-	"Accept-Language",
-	"Accept-Encoding",
-	"Cookie",
-	"Cache-Control",
-	"Content-Length",
-	"Content-Type",
-	"Accept",
-	"Referer",
-	"User-Agent",
-	"WWW-Authenticate",
-	"Proxy-Authenticate",
-	"Proxy-Authorization",
-	"Age",
+  "Authorization",
+  "Host",
+  "Accept-Language",
+  "Accept-Encoding",
+  "Cookie",
+  "Cache-Control",
+  "Content-Length",
+  "Content-Type",
+  "Accept",
+  "Referer",
+  "User-Agent",
+  "WWW-Authenticate",
+  "Proxy-Authenticate",
+  "Proxy-Authorization",
+  "Age",
 ];
 
 // Email 相關欄位
@@ -496,35 +547,35 @@ const directEmailData = ref({
 
 // 組合 headers 物件
 const getHeadersObject = () => {
-	const obj: Record<string, string> = {};
-	headerRows.value.forEach((row) => {
-		if (row.key) obj[row.key] = row.value;
-	});
-	return obj;
+  const obj: Record<string, string> = {};
+  headerRows.value.forEach((row) => {
+    if (row.key) obj[row.key] = row.value;
+  });
+  return obj;
 };
 
 const selectedWebhookTemplate = ref(null);
 const formData = ref({
-	name: "",
-	description: "",
-	schedule_expression: "",
-	timezone: "Asia/Taipei",
-	target_type: "http" as TargetType,
-	target_arn: "",
-	target_input: {} as Object,
-	max_retry_attempts: 3,
-	state: TaskState.ENABLED,
+  name: "",
+  description: "",
+  schedule_expression: "",
+  timezone: "Asia/Taipei",
+  target_type: "http" as TargetType,
+  target_arn: "",
+  target_input: {} as Object,
+  max_retry_attempts: 3,
+  state: TaskState.ENABLED,
 });
 
 const isEdit = computed(() => {
-	return !!(props.initialData && "id" in props.initialData);
+  return !!(props.initialData && "id" in props.initialData);
 });
 
 const targetTypeOptions = [
-	{ title: "HTTP", value: "http" },
-	{ title: "Webhook", value: "webhook" },
-	{ title: "RabbitMQ", value: "rabbitmq" },
-	{ title: "Email", value: "email" },
+  { title: "HTTP", value: "http" },
+  { title: "Webhook", value: "webhook" },
+  { title: "RabbitMQ", value: "rabbitmq" },
+  { title: "Email", value: "email" },
 ];
 
 // Email 相關計算屬性
