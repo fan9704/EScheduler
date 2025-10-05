@@ -1,10 +1,12 @@
 import logging
 import uvicorn
 import asyncio
+import os
 
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 from src.configs import OPENAPI_API_NAME, OPENAPI_API_VERSION, OPENAPI_API_DESCRIPTION, APPLICATION_PORT, IS_CONTAINER
 from src.initializer import init, init_db
@@ -51,8 +53,12 @@ app = FastAPI(
     description=OPENAPI_API_DESCRIPTION,
     lifespan=lifespan,
 )
-if IS_CONTAINER:
-    app.mount("/", StaticFiles(directory="frontend/dist", html=True), name="frontend")
+if IS_CONTAINER is True:
+    app.mount("/assets", StaticFiles(directory="frontend/dist/assets"), name="assets")
+
+    @app.get("/")
+    async def index():
+        return FileResponse("frontend/dist/index.html")
 instrumentator.instrument(app)
 logger.info("開始應用程序初始化...")
 init(app)
