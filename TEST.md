@@ -1,0 +1,34 @@
+# EScheduler Test Document
+
+---
+
+## Environments
+
+- Python 3.12
+- uv
+- Pytest
+- Pytest-asyncio
+
+### Install Dev Package for Testing
+
+```shell
+uv add --dev pytest
+uv sync # Sync with all packages
+uv sync --no-dev # Sync with no dev packages
+```
+
+---
+
+## Unit Test
+
+```shell
+uv run pytest -v
+```
+
+---
+
+## E2E Test
+
+```shell
+uv run pytest -v
+```
