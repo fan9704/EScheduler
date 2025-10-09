@@ -8,6 +8,7 @@
 - uv
 - Pytest
 - Pytest-asyncio
+- Pytest-cov
 
 ### Install Dev Package for Testing
 
