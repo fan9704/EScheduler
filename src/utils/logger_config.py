@@ -19,6 +19,7 @@ MAX_BYTES = 10 * 1024 * 1024  # 10MB
 BACKUP_COUNT = 5
 
 # Loki 配置
+ENABLE_LOKI_LOGGING = bool(os.getenv('ENABLE_LOKI_LOGGING', False) == "True")
 LOKI_ENDPOINT = os.getenv(
     'LOKI_ENDPOINT', 'http://127.0.0.1:3100/loki/api/v1/push')
 
@@ -63,15 +64,15 @@ def setup_logger(name='fastapi-app'):
     error_handler.setLevel(logging.ERROR)
     error_handler.setFormatter(logging.Formatter(LOG_FORMAT))
     logger_instance.addHandler(error_handler)
-
-    # 配置 Loki 輸出
-    loki_handler = LokiQueueHandler(
-        Queue(-1),
-        url=LOKI_ENDPOINT,
-        tags={'application': name},
-        version='1'
-    )
-    logger_instance.addHandler(loki_handler)
+    if ENABLE_LOKI_LOGGING:
+        # 配置 Loki 輸出
+        loki_handler = LokiQueueHandler(
+            Queue(-1),
+            url=LOKI_ENDPOINT,
+            tags={'application': name},
+            version='1'
+        )
+        logger_instance.addHandler(loki_handler)
 
     return logger_instance
 
