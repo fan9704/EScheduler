@@ -18,6 +18,12 @@ uv sync # Sync with all packages
 uv sync --no-dev # Sync with no dev packages
 ```
 
+### Check Testing Fixtures
+
+```shell
+uv run pytest --fixtures  
+```
+
 ---
 
 ## Unit Test
