@@ -3,7 +3,7 @@ name: Build & Push Docker Image to GHCR
 on:
   push:
     branches:
-      - main
+      - master
       - dev
       - release/*
     tags:
