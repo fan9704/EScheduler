@@ -1,6 +1,5 @@
 import os
 
-from src.configs.cfg import IS_TEST
 
 # DB Config
 POSTGRES_USER = os.getenv("POSTGRES_USER")
@@ -26,9 +25,6 @@ class TortoiseSettings:
     def generate(cls):
         """Generate Tortoise-ORM settings (with sqlite if tests)"""
 
-        if IS_TEST:
-            db_url = SQLITE_DB_URL
-        else:
-            db_url = POSTGRES_DB_URL
+        db_url = POSTGRES_DB_URL
         modules = {"models": DB_MODELS}
-        return TortoiseSettings(db_url=db_url, modules=modules, generate_schemas=True)  
+        return TortoiseSettings(db_url=db_url, modules=modules, generate_schemas=True)
