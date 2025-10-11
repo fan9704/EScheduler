@@ -15,7 +15,6 @@ async def in_memory_db():
         modules={
             "models": [
                 "src.models.tortoise.scheduler",
-                "src.models.tortoise.team",
                 "src.models.tortoise.email_template"
             ],
         }
