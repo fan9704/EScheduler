@@ -1,7 +1,9 @@
-from datetime import datetime
+import datetime as dt
 from typing import Optional, Dict, Any, List
-from pydantic import BaseModel, Field, validator, EmailStr
+
+from pydantic import BaseModel, Field, EmailStr, ConfigDict, field_validator
 from tortoise.contrib.pydantic import pydantic_model_creator
+
 from src.models.tortoise.email_template import EmailTemplate, EmailTemplateUsage
 
 # Tortoise Pydantic 模型
@@ -18,7 +20,8 @@ class TemplateVariable(BaseModel):
     default_value: Optional[Any] = Field(None, description="預設值")
     validation_pattern: Optional[str] = Field(None, description="驗證正則表達式")
     
-    @validator('type')
+    @field_validator('type')
+    @classmethod
     def validate_type(cls, v):
         allowed_types = ['string', 'number', 'email', 'date', 'boolean']
         if v not in allowed_types:
@@ -69,12 +72,11 @@ class EmailTemplateResponse(BaseModel):
     is_active: bool
     is_system_template: bool
     usage_count: int
-    last_used_at: Optional[datetime]
-    created_at: datetime
-    updated_at: datetime
-    
-    class Config:
-        from_attributes = True
+    last_used_at: Optional[dt.datetime]
+    created_at: dt.datetime
+    updated_at: dt.datetime
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class EmailTemplatePreview(BaseModel):
@@ -112,7 +114,7 @@ class EmailTaskCreate(BaseModel):
     html_body: Optional[str] = Field(None, description="HTML 內容")
     
     # 收件人設定
-    recipients: List[EmailStr] = Field(..., min_items=1, description="收件人列表")
+    recipients: List[EmailStr] = Field(..., min_length=1, description="收件人列表")
     cc: Optional[List[EmailStr]] = Field(None, description="副本收件人")
     bcc: Optional[List[EmailStr]] = Field(None, description="密件副本收件人")
     sender: Optional[EmailStr] = Field(None, description="寄件人")
@@ -121,16 +123,18 @@ class EmailTaskCreate(BaseModel):
     max_retry_attempts: int = Field(3, ge=0, le=10, description="最大重試次數")
     retry_policy: Optional[Dict[str, Any]] = Field(None, description="重試策略")
     
-    @validator('template_id')
-    def validate_template_usage(cls, v, values):
-        use_template = values.get('use_template', False)
+    @field_validator('template_id')
+    @classmethod
+    def validate_template_usage(cls, v, info):
+        use_template = info.data.get('use_template', False)
         if use_template and not v:
             raise ValueError('使用模板時必須提供 template_id')
         return v
-    
-    @validator('subject')
-    def validate_direct_email_fields(cls, v, values):
-        use_template = values.get('use_template', False)
+
+    @field_validator('subject')
+    @classmethod
+    def validate_direct_email_fields(cls, v, info):
+        use_template = info.data.get('use_template', False)
         if not use_template and not v:
             raise ValueError('不使用模板時必須提供 subject')
         return v
@@ -167,21 +171,20 @@ class EmailTaskResponse(BaseModel):
     target_arn: str
     target_input: Dict[str, Any]
     state: str
-    last_execution_time: Optional[datetime]
-    next_execution_time: Optional[datetime]
+    last_execution_time: Optional[dt.datetime]
+    next_execution_time: Optional[dt.datetime]
     execution_count: int
     max_retry_attempts: int
-    created_at: datetime
-    updated_at: datetime
+    created_at: dt.datetime
+    updated_at: dt.datetime
     
     # Email 特定資訊
     use_template: bool
     template_id: Optional[int]
     template_name: Optional[str]
     recipients: List[str]
-    
-    class Config:
-        from_attributes = True
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class EmailSendRequest(BaseModel):
@@ -196,7 +199,7 @@ class EmailSendRequest(BaseModel):
     html_body: Optional[str] = Field(None, description="HTML 內容")
     
     # 收件人設定
-    recipients: List[EmailStr] = Field(..., min_items=1, description="收件人列表")
+    recipients: List[EmailStr] = Field(..., min_length=1, description="收件人列表")
     cc: Optional[List[EmailStr]] = Field(None, description="副本收件人")
     bcc: Optional[List[EmailStr]] = Field(None, description="密件副本收件人")
     sender: Optional[EmailStr] = Field(None, description="寄件人")
