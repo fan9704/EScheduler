@@ -1,12 +1,11 @@
 from .scheduler import (
     ScheduledTaskCreate,
-    ScheduledTaskUpdate, 
+    ScheduledTaskUpdate,
     ScheduledTaskResponse,
     TaskExecutionResponse,
     SchedulerStatsResponse,
     TaskStateUpdateRequest
 )
-from src.models.pydantic.team import *
 from .email_template import (
     EmailTemplateCreate,
     EmailTemplateUpdate,

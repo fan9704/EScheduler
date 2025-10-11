@@ -1,5 +1,5 @@
 from src.utils.api.router import TypedAPIRouter
-from . import team, scheduler, schedule_helper, statistic, email_template
+from . import scheduler, schedule_helper, statistic, email_template
 
 
 scheduler_router = TypedAPIRouter(

@@ -42,7 +42,6 @@ async def init_db(app: FastAPI):
             "models": {
                 "models": [
                     "src.models.tortoise.scheduler",
-                    "src.models.tortoise.team",
                     "src.models.tortoise.email_template"
                     ],
                 'default_connection': 'default',
