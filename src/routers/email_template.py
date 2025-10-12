@@ -89,8 +89,9 @@ async def delete_email_template(
     """刪除 Email 模板"""
     try:
         await service.delete_template(template_id)
-    except HTTPException:
-        raise
+    except HTTPException as e:
+        logger.error(f"刪除模板失敗: {str(e)}")
+        raise HTTPException(status_code=500, detail="刪除模板失敗")
     except Exception as e:
         logger.error(f"刪除模板失敗: {str(e)}")
         raise HTTPException(status_code=500, detail="刪除模板失敗")

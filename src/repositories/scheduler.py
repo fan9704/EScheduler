@@ -1,5 +1,5 @@
+import datetime as dt
 from typing import List
-from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from src.models.enum.scheduler import TaskState, ExecutionStatus
@@ -27,7 +27,7 @@ class ScheduledTaskRepository(Repository):
         """根據狀態和目標類型獲取任務"""
         return await self.model.filter(state=state, target_type=target_type)
 
-    async def update_execution_time(self, task_id: int, last_execution: datetime, next_execution: datetime = None):
+    async def update_execution_time(self, task_id: int, last_execution: dt.datetime, next_execution: dt.datetime = None):
         """更新任務執行時間"""
         update_data = {
             "last_execution_time": last_execution,
@@ -64,10 +64,10 @@ class TaskExecutionRepository(Repository):
     def __init__(self):
         self.model = TaskExecution
 
-    def _get_timezone_aware_now(self, timezone: str = "Asia/Taipei") -> datetime:
+    def _get_timezone_aware_now(self, timezone: str = "Asia/Taipei") -> dt.datetime:
         """獲取帶時區的當前時間"""
         tz = ZoneInfo(timezone)
-        return datetime.now(tz)
+        return dt.datetime.now(tz)
 
     async def get_by_task_id(self, task_id: int) -> List[TaskExecution]:
         """獲取特定任務的執行記錄"""
@@ -81,7 +81,7 @@ class TaskExecutionRepository(Repository):
         """根據狀態獲取執行記錄"""
         return await self.model.filter(status=status)
 
-    async def get_executions_by_date_range(self, start_date: datetime, end_date: datetime) -> List[TaskExecution]:
+    async def get_executions_by_date_range(self, start_date: dt.datetime, end_date: dt.datetime) -> List[TaskExecution]:
         """根據日期範圍獲取執行記錄"""
         return await self.model.filter(
             started_at__gte=start_date,

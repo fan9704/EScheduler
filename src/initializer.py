@@ -6,11 +6,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
-from tortoise.contrib.starlette import register_tortoise
 from tortoise import Tortoise
 
-from src.configs import tortoise_config, GENERATE_DB_SCHEMA, ALLOW_ORIGINS, SECRET_KEY
+from src.configs import tortoise_config, ALLOW_ORIGINS, SECRET_KEY
 from src.utils.api.router import TypedAPIRouter
+
 logger = logging.getLogger(__name__)
 
 
@@ -44,7 +44,7 @@ async def init_db(app: FastAPI):
                     "src.models.tortoise.scheduler",
                     "src.models.tortoise.team",
                     "src.models.tortoise.email_template"
-                    ],
+                ],
                 'default_connection': 'default',
             }
         }
@@ -53,6 +53,7 @@ async def init_db(app: FastAPI):
         config=config
     )
     await Tortoise.generate_schemas()
+
 
 def init_routers(app: FastAPI):
     """
@@ -82,6 +83,7 @@ def init_cors(app: FastAPI):
 def init_scheduler():
     scheduler = AsyncIOScheduler()
     scheduler.start()
+
 
 def init_middleware(app: FastAPI):
     app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
