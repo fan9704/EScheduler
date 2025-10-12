@@ -1,11 +1,11 @@
 import logging
 import os
 import sys
-from datetime import datetime
+import datetime as dt
 from logging.handlers import RotatingFileHandler
 from multiprocessing import Queue
 from logging_loki import LokiQueueHandler
-from pythonjsonlogger import jsonlogger
+from pythonjsonlogger import json
 from src.configs import TZ
 
 # 基本日誌配置
@@ -51,7 +51,7 @@ def setup_logger(name='fastapi-app'):
         maxBytes=MAX_BYTES,
         backupCount=BACKUP_COUNT
     )
-    json_formatter = jsonlogger.JsonFormatter(JSON_LOG_FORMAT)
+    json_formatter = json.JsonFormatter(JSON_LOG_FORMAT)
     json_handler.setFormatter(json_formatter)
     logger_instance.addHandler(json_handler)
 
@@ -81,19 +81,19 @@ def setup_logger(name='fastapi-app'):
 logger = setup_logger()
 
 
-def log_exception(logger_instance, exc_info=None):
-    """記錄異常詳細信息
-
-    Args:
-        logger (logging.Logger): 日誌記錄器實例
-        exc_info: 異常信息，默認為當前異常
-    """
-    logger_instance.error(
-        'Exception occurred',
-        exc_info=exc_info or sys.exc_info(),
-        extra={
-            'timestamp': datetime.now(TZ).isoformat(),
-            'error_type': str(sys.exc_info()[0].__name__),
-            'error_message': str(sys.exc_info()[1])
-        }
-    )
+# def log_exception(logger_instance, exc_info=None):
+#     """記錄異常詳細信息
+#
+#     Args:
+#         logger (logging.Logger): 日誌記錄器實例
+#         exc_info: 異常信息，默認為當前異常
+#     """
+#     logger_instance.error(
+#         'Exception occurred',
+#         exc_info=exc_info or sys.exc_info(),
+#         extra={
+#             'timestamp': dt.datetime.now(TZ).isoformat(),
+#             'error_type': str(sys.exc_info()[0].__name__),
+#             'error_message': str(sys.exc_info()[1])
+#         }
+#     )

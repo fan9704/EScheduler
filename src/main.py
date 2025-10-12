@@ -1,16 +1,15 @@
-import logging
-import uvicorn
 import asyncio
-import os
-
+import logging
 from contextlib import asynccontextmanager
+
+import uvicorn
 from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from src.configs import OPENAPI_API_NAME, OPENAPI_API_VERSION, OPENAPI_API_DESCRIPTION, APPLICATION_PORT, IS_CONTAINER
 from src.initializer import init, init_db
-from prometheus_fastapi_instrumentator import Instrumentator
 
 logger = logging.getLogger(__name__)
 instrumentator = Instrumentator()

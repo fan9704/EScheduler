@@ -1,13 +1,11 @@
 import aio_pika
 import asyncio
-import logging
 import json
 from typing import Dict, Any
 from . import ExecutionStrategy
 from src.models.pydantic.strategy import ExecutionResult, RabbitMQResult
 from src.configs.strategy_config import get_rabbitmq_config
-
-logger = logging.getLogger(__name__)
+from src.utils.logger import logger
 
 
 class RabbitMQExecutionStrategy(ExecutionStrategy):
