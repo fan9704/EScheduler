@@ -1,12 +1,10 @@
 import aiohttp
 import asyncio
-import logging
 from typing import Dict, Any
 from . import ExecutionStrategy
 from src.models.pydantic.strategy import ExecutionResult, HTTPResult
 from src.configs.strategy_config import get_http_config
-
-logger = logging.getLogger(__name__)
+from src.utils.logger import logger
 
 
 class HttpExecutionStrategy(ExecutionStrategy):
@@ -58,37 +56,37 @@ class HttpExecutionStrategy(ExecutionStrategy):
                 connector=connector
             ) as session:
                 try:
-                    async with session.request(
+                    response = await session.request(
                         method=method,
                         url=target_arn,
                         headers=default_headers,
                         json=data if data and method in ['POST', 'PUT', 'PATCH'] else None,
                         params=params
-                    ) as response:
-                        response_text = await response.text()
-                        execution_time = asyncio.get_event_loop().time() - start_time
-                        
-                        logger.info(f"HTTP 回應狀態: {response.status}")
-                        logger.info(f"HTTP 回應內容: {response_text[:200]}...")  # 只記錄前200字符
-                        
-                        success = 200 <= response.status < 300
-                        http_result = HTTPResult(
-                            method=method,
-                            url=str(response.url),
-                            request_headers=default_headers,
-                            request_params=params,
-                            request_data=data,
-                            response_body=response_text,
-                            response_headers=dict(response.headers)
-                        )
-                        
-                        return ExecutionResult(
-                            success=success,
-                            message=f"HTTP {method} 請求{'成功' if success else '失敗'} (狀態碼: {response.status})",
-                            data=http_result,
-                            execution_time=execution_time,
-                            status_code=response.status
-                        )
+                    )
+                    response_text = await response.text()
+                    execution_time = asyncio.get_event_loop().time() - start_time
+
+                    logger.info(f"HTTP 回應狀態: {response.status}")
+                    logger.info(f"HTTP 回應內容: {response_text[:200]}...")  # 只記錄前200字符
+
+                    success = 200 <= response.status < 300
+                    http_result = HTTPResult(
+                        method=method,
+                        url=str(response.url),
+                        request_headers=default_headers,
+                        request_params=params,
+                        request_data=data,
+                        response_body=response_text,
+                        response_headers=dict(response.headers)
+                    )
+
+                    return ExecutionResult(
+                        success=success,
+                        message=f"HTTP {method} 請求{'成功' if success else '失敗'} (狀態碼: {response.status})",
+                        data=http_result,
+                        execution_time=execution_time,
+                        status_code=response.status
+                    )
                         
                 except aiohttp.ClientConnectorError as e:
                     execution_time = asyncio.get_event_loop().time() - start_time
@@ -121,6 +119,7 @@ class HttpExecutionStrategy(ExecutionStrategy):
             return ExecutionResult(
                 success=False,
                 message=f"HTTP 請求異常: {str(e)}",
+                data=None,
                 execution_time=execution_time
             )
     
