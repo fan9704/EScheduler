@@ -66,7 +66,7 @@ def init_routers(app: FastAPI):
     routers = [o[1] for o in getmembers(routers) if isinstance(o[1], TypedAPIRouter)]
 
     for router in routers:
-        app.include_router(**router.dict())
+        app.include_router(**router.model_dump())
 
 
 def init_cors(app: FastAPI):
