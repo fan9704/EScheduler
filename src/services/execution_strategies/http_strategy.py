@@ -1,18 +1,24 @@
 import aiohttp
 import asyncio
-import logging
 from typing import Dict, Any
 from . import ExecutionStrategy
 from src.models.pydantic.strategy import ExecutionResult, HTTPResult
-
-logger = logging.getLogger(__name__)
+from src.configs.strategy_config import get_http_config
+from src.utils.logger import logger
 
 
 class HttpExecutionStrategy(ExecutionStrategy):
     """HTTP 請求執行策略"""
     
-    def __init__(self, timeout: int = 30):
-        self.timeout = aiohttp.ClientTimeout(total=timeout)
+    def __init__(self):
+        # 從統一配置系統載入 HTTP 配置
+        http_config = get_http_config()
+        
+        self.timeout = aiohttp.ClientTimeout(total=http_config.timeout)
+        self.max_retries = http_config.max_retries
+        self.verify_ssl = http_config.verify_ssl
+        
+        logger.info(f"HttpExecutionStrategy 初始化完成 - timeout: {http_config.timeout}s, max_retries: {http_config.max_retries}")
     
     async def execute(self, target_arn: str, target_input: Dict[str, Any]) -> ExecutionResult:
         """執行 HTTP 請求"""
@@ -42,39 +48,45 @@ class HttpExecutionStrategy(ExecutionStrategy):
             logger.info(f"請求參數: {params}")
             logger.info(f"請求頭: {default_headers}")
             
-            async with aiohttp.ClientSession(timeout=self.timeout) as session:
+            # 使用配置的 SSL 驗證設置
+            connector = aiohttp.TCPConnector(ssl=self.verify_ssl)
+            
+            async with aiohttp.ClientSession(
+                timeout=self.timeout, 
+                connector=connector
+            ) as session:
                 try:
-                    async with session.request(
+                    response = await session.request(
                         method=method,
                         url=target_arn,
                         headers=default_headers,
                         json=data if data and method in ['POST', 'PUT', 'PATCH'] else None,
                         params=params
-                    ) as response:
-                        response_text = await response.text()
-                        execution_time = asyncio.get_event_loop().time() - start_time
-                        
-                        logger.info(f"HTTP 回應狀態: {response.status}")
-                        logger.info(f"HTTP 回應內容: {response_text[:200]}...")  # 只記錄前200字符
-                        
-                        success = 200 <= response.status < 300
-                        http_result = HTTPResult(
-                            method=method,
-                            url=str(response.url),
-                            request_headers=default_headers,
-                            request_params=params,
-                            request_data=data,
-                            response_body=response_text,
-                            response_headers=dict(response.headers)
-                        )
-                        
-                        return ExecutionResult(
-                            success=success,
-                            message=f"HTTP {method} 請求{'成功' if success else '失敗'} (狀態碼: {response.status})",
-                            data=http_result,
-                            execution_time=execution_time,
-                            status_code=response.status
-                        )
+                    )
+                    response_text = await response.text()
+                    execution_time = asyncio.get_event_loop().time() - start_time
+
+                    logger.info(f"HTTP 回應狀態: {response.status}")
+                    logger.info(f"HTTP 回應內容: {response_text[:200]}...")  # 只記錄前200字符
+
+                    success = 200 <= response.status < 300
+                    http_result = HTTPResult(
+                        method=method,
+                        url=str(response.url),
+                        request_headers=default_headers,
+                        request_params=params,
+                        request_data=data,
+                        response_body=response_text,
+                        response_headers=dict(response.headers)
+                    )
+
+                    return ExecutionResult(
+                        success=success,
+                        message=f"HTTP {method} 請求{'成功' if success else '失敗'} (狀態碼: {response.status})",
+                        data=http_result,
+                        execution_time=execution_time,
+                        status_code=response.status
+                    )
                         
                 except aiohttp.ClientConnectorError as e:
                     execution_time = asyncio.get_event_loop().time() - start_time
@@ -107,6 +119,7 @@ class HttpExecutionStrategy(ExecutionStrategy):
             return ExecutionResult(
                 success=False,
                 message=f"HTTP 請求異常: {str(e)}",
+                data=None,
                 execution_time=execution_time
             )
     

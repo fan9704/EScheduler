@@ -1,15 +1,15 @@
 import logging
 import os
 import sys
-from datetime import datetime
+import datetime as dt
 from logging.handlers import RotatingFileHandler
 from multiprocessing import Queue
 from logging_loki import LokiQueueHandler
-from pythonjsonlogger import jsonlogger
+from pythonjsonlogger import json
 from src.configs import TZ
 
 # 基本日誌配置
-LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO')
+LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')
 LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 JSON_LOG_FORMAT = '%(timestamp)s %(level)s %(name)s %(message)s'
 
@@ -19,7 +19,8 @@ MAX_BYTES = 10 * 1024 * 1024  # 10MB
 BACKUP_COUNT = 5
 
 # Loki 配置
-LOKI_ENDPOINT = os.getenv(
+ENABLE_LOKI_LOGGING = os.environ.get('ENABLE_LOKI_LOGGING') == "True"
+LOKI_ENDPOINT = os.environ.get(
     'LOKI_ENDPOINT', 'http://127.0.0.1:3100/loki/api/v1/push')
 
 
@@ -50,7 +51,7 @@ def setup_logger(name='fastapi-app'):
         maxBytes=MAX_BYTES,
         backupCount=BACKUP_COUNT
     )
-    json_formatter = jsonlogger.JsonFormatter(JSON_LOG_FORMAT)
+    json_formatter = json.JsonFormatter(JSON_LOG_FORMAT)
     json_handler.setFormatter(json_formatter)
     logger_instance.addHandler(json_handler)
 
@@ -63,15 +64,16 @@ def setup_logger(name='fastapi-app'):
     error_handler.setLevel(logging.ERROR)
     error_handler.setFormatter(logging.Formatter(LOG_FORMAT))
     logger_instance.addHandler(error_handler)
-
-    # 配置 Loki 輸出
-    loki_handler = LokiQueueHandler(
-        Queue(-1),
-        url=LOKI_ENDPOINT,
-        tags={'application': name},
-        version='1'
-    )
-    logger_instance.addHandler(loki_handler)
+    if ENABLE_LOKI_LOGGING:
+        print("啟動 Loki 配置之中")
+        # 配置 Loki 輸出
+        loki_handler = LokiQueueHandler(
+            Queue(-1),
+            url=LOKI_ENDPOINT,
+            tags={'application': name},
+            version='1'
+        )
+        logger_instance.addHandler(loki_handler)
 
     return logger_instance
 
@@ -80,19 +82,19 @@ def setup_logger(name='fastapi-app'):
 logger = setup_logger()
 
 
-def log_exception(logger_instance, exc_info=None):
-    """記錄異常詳細信息
-
-    Args:
-        logger (logging.Logger): 日誌記錄器實例
-        exc_info: 異常信息，默認為當前異常
-    """
-    logger_instance.error(
-        'Exception occurred',
-        exc_info=exc_info or sys.exc_info(),
-        extra={
-            'timestamp': datetime.now(TZ).isoformat(),
-            'error_type': str(sys.exc_info()[0].__name__),
-            'error_message': str(sys.exc_info()[1])
-        }
-    )
+# def log_exception(logger_instance, exc_info=None):
+#     """記錄異常詳細信息
+#
+#     Args:
+#         logger (logging.Logger): 日誌記錄器實例
+#         exc_info: 異常信息，默認為當前異常
+#     """
+#     logger_instance.error(
+#         'Exception occurred',
+#         exc_info=exc_info or sys.exc_info(),
+#         extra={
+#             'timestamp': dt.datetime.now(TZ).isoformat(),
+#             'error_type': str(sys.exc_info()[0].__name__),
+#             'error_message': str(sys.exc_info()[1])
+#         }
+#     )

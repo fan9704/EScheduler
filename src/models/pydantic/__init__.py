@@ -1,12 +1,24 @@
 from .scheduler import (
     ScheduledTaskCreate,
-    ScheduledTaskUpdate, 
+    ScheduledTaskUpdate,
     ScheduledTaskResponse,
     TaskExecutionResponse,
     SchedulerStatsResponse,
     TaskStateUpdateRequest
 )
-from src.models.pydantic.team import *
+from .email_template import (
+    EmailTemplateCreate,
+    EmailTemplateUpdate,
+    EmailTemplateResponse,
+    EmailTemplatePreview,
+    EmailTemplatePreviewResponse,
+    EmailTaskCreate,
+    EmailTaskUpdate,
+    EmailTaskResponse,
+    EmailSendRequest,
+    EmailSendResponse,
+    TemplateVariable
+)
 
 from .strategy import ExecutionResult
 from .statistic import StatisticDashboardMetricResponse
@@ -19,5 +31,17 @@ __all__ = [
     "SchedulerStatsResponse",
     "TaskStateUpdateRequest",
     "StatisticDashboardMetricResponse",
-    "ExecutionResult"
+    "ExecutionResult",
+    # Email Template 相關
+    "EmailTemplateCreate",
+    "EmailTemplateUpdate",
+    "EmailTemplateResponse",
+    "EmailTemplatePreview",
+    "EmailTemplatePreviewResponse",
+    "EmailTaskCreate",
+    "EmailTaskUpdate",
+    "EmailTaskResponse",
+    "EmailSendRequest",
+    "EmailSendResponse",
+    "TemplateVariable"
 ]

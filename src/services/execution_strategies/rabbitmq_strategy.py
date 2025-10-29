@@ -1,20 +1,24 @@
 import aio_pika
 import asyncio
-import logging
 import json
 from typing import Dict, Any
 from . import ExecutionStrategy
 from src.models.pydantic.strategy import ExecutionResult, RabbitMQResult
-
-logger = logging.getLogger(__name__)
+from src.configs.strategy_config import get_rabbitmq_config
+from src.utils.logger import logger
 
 
 class RabbitMQExecutionStrategy(ExecutionStrategy):
     """RabbitMQ 訊息發送執行策略（支援 Exchange Type / Queue / 優先級 / 死信）"""
     
-    def __init__(self, connection_url: str = None):
-        self.connection_url = connection_url or "amqp://guest:guest@localhost:5672/"
+    def __init__(self):
+        # 從統一配置系統載入 RabbitMQ 配置
+        rabbitmq_config = get_rabbitmq_config()
+        
+        self.connection_url = rabbitmq_config.connection_url
         self.connection = None
+        
+        logger.info(f"RabbitMQExecutionStrategy 初始化完成 - URL: {self.connection_url}")
     
     async def execute(self, target_arn: str, target_input: Dict[str, Any]) -> ExecutionResult:
         """發送 RabbitMQ 訊息"""

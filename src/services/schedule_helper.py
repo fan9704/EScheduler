@@ -1,19 +1,18 @@
-import logging
 import re
-from typing import List, Dict, Any
 from datetime import datetime, timedelta
-from croniter import croniter
+from typing import List
 from zoneinfo import ZoneInfo
 
+from croniter import croniter
+
+from src.configs import TZ
 from src.models.pydantic.schedule_helper import (
-    ScheduleType, TimeUnit, CronField,
+    ScheduleType, CronField,
     RateExpressionRequest, CronExpressionRequest, QuickScheduleRequest,
     ScheduleExpressionResponse, ScheduleValidationRequest, ScheduleValidationResponse,
     ScheduleTemplateResponse, CronHelpResponse
 )
-from src.configs import TZ
-
-logger = logging.getLogger(__name__)
+from src.utils.logger import logger
 
 
 class ScheduleHelperService:
@@ -31,7 +30,7 @@ class ScheduleHelperService:
         }
         self.tz = ZoneInfo(TZ)
     
-    def generate_rate_expression(self, request: RateExpressionRequest) -> ScheduleExpressionResponse:
+    async def generate_rate_expression(self, request: RateExpressionRequest) -> ScheduleExpressionResponse:
         """生成 Rate 表達式"""
         expression = f"rate({request.value} {request.unit.value})"
         
@@ -54,7 +53,7 @@ class ScheduleHelperService:
             next_runs=next_runs
         )
     
-    def generate_cron_expression(self, request: CronExpressionRequest) -> ScheduleExpressionResponse:
+    async def generate_cron_expression(self, request: CronExpressionRequest) -> ScheduleExpressionResponse:
         """生成 Cron 表達式"""
         expression = f"cron({request.minute} {request.hour} {request.day} {request.month} {request.weekday})"
         
@@ -71,7 +70,7 @@ class ScheduleHelperService:
             next_runs=next_runs
         )
     
-    def generate_quick_schedule(self, request: QuickScheduleRequest) -> ScheduleExpressionResponse:
+    async def generate_quick_schedule(self, request: QuickScheduleRequest) -> ScheduleExpressionResponse:
         """生成快速排程表達式"""
         if request.type in self.quick_schedules:
             template = self.quick_schedules[request.type]
@@ -109,7 +108,7 @@ class ScheduleHelperService:
         
         raise ValueError("無效的快速排程類型")
     
-    def validate_expression(self, request: ScheduleValidationRequest) -> ScheduleValidationResponse:
+    async def validate_expression(self, request: ScheduleValidationRequest) -> ScheduleValidationResponse:
         """驗證排程表達式"""
         try:
             expression = request.expression.strip()
@@ -174,7 +173,7 @@ class ScheduleHelperService:
                 error=f"表達式驗證失敗: {str(e)}"
             )
     
-    def get_schedule_templates(self) -> List[ScheduleTemplateResponse]:
+    async def get_schedule_templates(self) -> List[ScheduleTemplateResponse]:
         """獲取排程模板"""
         templates = [
             # 常用間隔
@@ -216,7 +215,7 @@ class ScheduleHelperService:
             for t in templates
         ]
     
-    def get_cron_help(self) -> List[CronHelpResponse]:
+    async def get_cron_help(self) -> List[CronHelpResponse]:
         """獲取 Cron 幫助信息"""
         return [
             CronHelpResponse(
@@ -304,18 +303,46 @@ class ScheduleHelperService:
         return next_runs
     
     def _calculate_next_runs_cron(self, expression: str, count: int = 5) -> List[str]:
-        """計算 Cron 表達式的接下來執行時間"""
+        """簡化版：根據 cron 表達式產生下幾次執行時間（不使用 croniter）"""
         try:
-            cron_expr = expression[5:-1]  # 移除 'cron(' 和 ')'
-            cron = croniter(cron_expr, datetime.now(self.tz))
-            
+            # 例如：cron(0 9 * * 1-5)
+            expr = expression[5:-1].strip()
+            minute, hour, day, month, weekday = expr.split()
+
+            now = datetime.now()
             next_runs = []
+
+            # 僅處理最常見型態：「每天固定時刻」或「每週特定日」
             for _ in range(count):
-                next_time = cron.get_next(datetime)
+                next_time = now.replace(second=0, microsecond=0)
+
+                # 固定時間
+                next_time = next_time.replace(hour=int(hour), minute=int(minute))
+
+                # 若已過當日時間 → +1 天
+                if next_time <= now:
+                    next_time += timedelta(days=1)
+
+                # 若有 weekday 限制（0=週一，6=週日）
+                if weekday != "*":
+                    valid_days = []
+                    for part in weekday.split(','):
+                        if '-' in part:
+                            a, b = part.split('-')
+                            valid_days.extend(range(int(a), int(b)+1))
+                        else:
+                            valid_days.append(int(part))
+
+                    while next_time.weekday() + 1 not in valid_days:
+                        next_time += timedelta(days=1)
+
                 next_runs.append(next_time.strftime("%Y-%m-%d %H:%M:%S"))
-            
+                now = next_time + timedelta(seconds=1)
+
             return next_runs
-        except Exception:
+
+        except Exception as e:
+            logger.error(f"Error parsing cron '{expression}': {e}")
             return []
     
     def _calculate_next_runs_from_expression(self, expression: str) -> List[str]:

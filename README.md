@@ -195,3 +195,5 @@ curl -X POST "http://localhost:8000/api/scheduler/" \
   }
 }
 ```
+
+[![codecov](https://codecov.io/github/fan9704/EScheduler/graph/badge.svg?token=NI49H06BB7)](https://codecov.io/github/fan9704/EScheduler)

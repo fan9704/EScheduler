@@ -1,5 +1,4 @@
-import logging
-from datetime import datetime, timedelta
+import datetime as dt
 from typing import List, Optional
 from zoneinfo import ZoneInfo
 
@@ -16,11 +15,8 @@ from src.models.pydantic.scheduler import (
 from src.repositories.scheduler import ScheduledTaskRepository, TaskExecutionRepository
 from src.services.execution_strategies.strategy_factory import ExecutionStrategyFactory
 from src.services.scheduler_engine import SchedulerEngine
+from src.utils.logger import logger
 from src.utils.schedule import match_rate_expression_return_delta
-
-logger = logging.getLogger(__name__)
-
-
 
 
 class SchedulerService:
@@ -32,10 +28,10 @@ class SchedulerService:
         self.scheduler_engine: SchedulerEngine = get_scheduler_engine()
 
     @staticmethod
-    def _get_timezone_aware_now(timezone: str = "Asia/Taipei") -> datetime:
+    def _get_timezone_aware_now(timezone: str = "Asia/Taipei") -> dt.datetime:
         """獲取帶時區的當前時間"""
         tz = ZoneInfo(timezone)
-        return datetime.now(tz)
+        return dt.datetime.now(tz)
 
     async def trigger_task_now(self, task_id: int) -> bool:
         """立即觸發任務執行（使用策略模式）"""
@@ -125,7 +121,7 @@ class SchedulerService:
         next_execution = self._calculate_next_execution(task_data.schedule_expression, task_data.timezone)
         
         # 創建任務
-        task_dict = task_data.dict()
+        task_dict = task_data.model_dump()
         task_dict["next_execution_time"] = next_execution
         
         task = await self.task_repository.create(**task_dict)
@@ -143,7 +139,7 @@ class SchedulerService:
             ))
             logger.info(f"任務 {task.name} 已添加到排程引擎")
         
-        return ScheduledTaskResponse.from_orm(task)
+        return ScheduledTaskResponse.model_validate(task)
 
     async def update_task(self, task_id: int, task_data: ScheduledTaskUpdate) -> ScheduledTaskResponse:
         """更新任務"""
@@ -206,14 +202,18 @@ class SchedulerService:
         except Exception:
             raise HTTPException(status_code=404, detail="任務不存在")
 
-    async def get_all_tasks(self, state: Optional[TaskState] = None) -> List[ScheduledTaskResponse]:
+    async def get_all_tasks(self, state: Optional[TaskState] = None, target_type: Optional[str] = None) -> List[ScheduledTaskResponse]:
         """獲取所有任務"""
-        if state:
+        if state and target_type:
+            tasks = await self.task_repository.get_tasks_by_state_and_target_type(state, target_type)
+        elif state:
             tasks = await self.task_repository.get_tasks_by_state(state)
+        elif target_type:
+            tasks = await self.task_repository.get_tasks_by_target_type(target_type)
         else:
             tasks = await self.task_repository.find_all()
         
-        return [ScheduledTaskResponse.from_orm(task) for task in tasks]
+        return [ScheduledTaskResponse.model_validate(task) for task in tasks]
 
     async def update_task_state(self, task_id: int, state_data: TaskStateUpdateRequest) -> ScheduledTaskResponse:
         """更新任務狀態"""
@@ -221,7 +221,7 @@ class SchedulerService:
             await self.task_repository.update_state(task_id, state_data.state)
             task = await self.task_repository.get_by_id(task_id)
             logger.info(f"更新任務狀態: {task.name} -> {state_data.state}")
-            return ScheduledTaskResponse.from_orm(task)
+            return ScheduledTaskResponse.model_validate(task)
         except Exception:
             raise HTTPException(status_code=404, detail="任務不存在")
 
@@ -231,7 +231,7 @@ class SchedulerService:
         """獲取任務執行記錄"""
         try:
             executions = await self.execution_repository.get_by_task_id(task_id)
-            return [TaskExecutionResponse.from_orm(execution) for execution in executions[:limit]]
+            return [TaskExecutionResponse.model_validate(execution) for execution in executions[:limit]]
         except Exception as e:
             logger.error(f"獲取任務執行記錄失敗: {e}")
             return []
@@ -257,16 +257,16 @@ class SchedulerService:
         return [ScheduledTaskResponse.from_orm(task) for task in tasks]
 
     @staticmethod
-    def _calculate_next_execution(schedule_expression: str, timezone: str = "Asia/Taipei") -> datetime:
+    def _calculate_next_execution(schedule_expression: str, timezone: str = "Asia/Taipei") -> dt.datetime:
         """計算下次執行時間（帶時區）"""
         try:
             tz = ZoneInfo(timezone)
-            current_time = datetime.now(tz)
+            current_time = dt.datetime.now(tz)
             
             if schedule_expression.startswith('cron(') and schedule_expression.endswith(')'):
                 cron_expr = schedule_expression[5:-1]
                 cron = croniter(cron_expr, current_time)
-                return cron.get_next(datetime)
+                return cron.get_next(dt.datetime)
             
             elif schedule_expression.startswith('rate(') and schedule_expression.endswith(')'):
                 rate_expr = schedule_expression[5:-1]
@@ -276,13 +276,13 @@ class SchedulerService:
             elif schedule_expression.startswith('at(') and schedule_expression.endswith(')'):
                 datetime_str = schedule_expression[3:-1]
                 # 解析 ISO 格式的日期時間，如果沒有時區信息則添加指定時區
-                dt = datetime.fromisoformat(datetime_str)
+                d_t = dt.datetime.fromisoformat(datetime_str)
                 if dt.tzinfo is None:
-                    dt = dt.replace(tzinfo=tz)
-                return dt
+                    d_t = d_t.replace(tzinfo=tz)
+                return d_t
             
             elif schedule_expression == 'once':
-                return current_time + timedelta(seconds=1)
+                return current_time + dt.timedelta(seconds=1)
             
             else:
                 raise ValueError("無效的排程表達式格式")

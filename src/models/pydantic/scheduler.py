@@ -1,7 +1,7 @@
-from datetime import datetime
+import datetime as dt
 from typing import Optional, Dict, Any
 
-from pydantic import BaseModel, Field, validator, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, field_validator
 from tortoise.contrib.pydantic import pydantic_model_creator
 
 from src.models.enum.scheduler import TaskState, TargetType, ExecutionStatus
@@ -26,7 +26,8 @@ class ScheduledTaskCreate(BaseModel):
     dead_letter_config: Optional[Dict[str, Any]] = Field(None, description="死信佇列配置")
     state: TaskState = Field(default=TaskState.ENABLED, description="任務狀態")
 
-    @validator('schedule_expression')
+    @field_validator('schedule_expression')
+    @classmethod
     def validate_schedule_expression(cls, v):
         """驗證排程表達式格式"""
         if v.startswith('cron(') and v.endswith(')'):
@@ -35,7 +36,7 @@ class ScheduledTaskCreate(BaseModel):
             return v
         else:
             raise ValueError('排程表達式必須是 cron(expression) 或 rate(expression) 格式')
-        
+
 
 class ScheduledTaskUpdate(BaseModel):
     """更新排程任務請求模型"""
@@ -55,7 +56,7 @@ class ScheduledTaskUpdate(BaseModel):
 class ScheduledTaskResponse(BaseModel):
     """排程任務回應模型"""
     model_config = ConfigDict(from_attributes=True)  # Pydantic v2 配置
-    
+
     id: int
     name: str
     description: Optional[str]
@@ -65,25 +66,25 @@ class ScheduledTaskResponse(BaseModel):
     target_arn: str
     target_input: Optional[Dict[str, Any]]
     state: str
-    last_execution_time: Optional[datetime]
-    next_execution_time: Optional[datetime]
+    last_execution_time: Optional[dt.datetime]
+    next_execution_time: Optional[dt.datetime]
     execution_count: int
     max_retry_attempts: int
     retry_policy: Optional[Dict[str, Any]]
     dead_letter_config: Optional[Dict[str, Any]]
-    created_at: datetime
-    updated_at: datetime
+    created_at: dt.datetime
+    updated_at: dt.datetime
 
 
 class TaskExecutionResponse(BaseModel):
     """任務執行記錄回應模型"""
     model_config = ConfigDict(from_attributes=True)  # Pydantic v2 配置
-    
+
     id: int
     task_id: int
     status: ExecutionStatus
-    started_at: datetime
-    completed_at: Optional[datetime]
+    started_at: dt.datetime
+    completed_at: Optional[dt.datetime]
     response_code: Optional[int]
     response_body: Optional[str]
     error_message: Optional[str]
@@ -99,9 +100,11 @@ class SchedulerStatsResponse(BaseModel):
     successful_executions_today: int
     failed_executions_today: int
 
+
 class TaskStateUpdateRequest(BaseModel):
     """任務狀態更新請求模型"""
     state: TaskState = Field(..., description="新的任務狀態")
+
 
 class SchedulerJob(BaseModel):
     id: int
@@ -110,11 +113,13 @@ class SchedulerJob(BaseModel):
     target_arn: Optional[str]
     target_input: Optional[Dict[str, Any]] = Field(default={})
 
+
 class InternalSchedulerJob(BaseModel):
     id: int
     name: str
-    next_run_time: Optional[datetime]
+    next_run_time: Optional[dt.datetime]
     trigger: str
+
 
 class InternalJobStatusResponse(BaseModel):
     exists: bool

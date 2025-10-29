@@ -1,6 +1,7 @@
 .idea/**
 .venv
 logs
+.coverage
 
 pgadmin_data/**
 postgres-data/**
@@ -17,3 +18,4 @@ __pycache__
 *.pem
 
 frontend/node_modules
+frontend/.idea
