@@ -25,6 +25,7 @@ dependencies = [
     "aio-pika (>=9.5.7,<10.0.0)",
     "aiosmtplib (>=4.0.1,<5.0.0)",
     "jinja2>=3.1.6",
+    "ruff>=0.15.0",
 ]
 
 [dependency-groups]
@@ -34,4 +35,23 @@ dev = [
     "pytest-cov>=7.0.0",
     "pytest-dotenv>=0.5.2",
     "pytest-mock>=3.15.1",
+]
+
+[tool.ruff.lint]
+select = [
+    "F", # Pyflakes
+    "N", # PEP8-Naming
+    "PLR", # Pylint-Refactor
+]
+
+ignore = [
+    "F401", # unused import
+    "F403", # import *
+    "PLR0913", # Too many argument
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = [
+    "PLR2004", # 允許測試碼使用 magic numbers
+    "S101",    # 允許使用 assert
 ]
