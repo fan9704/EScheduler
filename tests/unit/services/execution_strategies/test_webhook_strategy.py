@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import patch, AsyncMock, MagicMock
+from unittest.mock import patch, AsyncMock
 from src.services.execution_strategies.webhook_strategy import WebhookExecutionStrategy
 from src.models.pydantic.strategy import ExecutionResult
 

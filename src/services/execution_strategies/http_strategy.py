@@ -5,7 +5,7 @@ from . import ExecutionStrategy
 from src.models.pydantic.strategy import ExecutionResult, HTTPResult
 from src.configs.strategy_config import get_http_config
 from src.utils.logger import logger
-
+from src.consts import HTTP_OK, HTTP_MULTIPLE_CHOICES
 
 class HttpExecutionStrategy(ExecutionStrategy):
     """HTTP 請求執行策略"""
@@ -69,7 +69,7 @@ class HttpExecutionStrategy(ExecutionStrategy):
                     logger.info(f"HTTP 回應狀態: {response.status}")
                     logger.info(f"HTTP 回應內容: {response_text[:200]}...")  # 只記錄前200字符
 
-                    success = 200 <= response.status < 300
+                    success = HTTP_OK <= response.status < HTTP_MULTIPLE_CHOICES
                     http_result = HTTPResult(
                         method=method,
                         url=str(response.url),

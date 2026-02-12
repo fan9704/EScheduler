@@ -4,7 +4,7 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
-import src.utils.schedule as schedule
+from src.utils import schedule
 
 
 class TestGetTimezoneAwareNow:

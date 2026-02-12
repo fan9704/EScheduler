@@ -13,6 +13,7 @@ from src.models.pydantic.schedule_helper import (
     ScheduleTemplateResponse, CronHelpResponse
 )
 from src.utils.logger import logger
+from src.consts import CRON_FIELD_COUNT
 
 
 class ScheduleHelperService:
@@ -107,71 +108,73 @@ class ScheduleHelperService:
             )
         
         raise ValueError("無效的快速排程類型")
-    
+
     async def validate_expression(self, request: ScheduleValidationRequest) -> ScheduleValidationResponse:
         """驗證排程表達式"""
+        expression = request.expression.strip()
+
         try:
-            expression = request.expression.strip()
-            
             if expression.startswith('cron(') and expression.endswith(')'):
-                # 驗證 Cron 表達式
-                cron_expr = expression[5:-1]
-                parts = cron_expr.split()
-                
-                if len(parts) != 5:
-                    return ScheduleValidationResponse(
-                        valid=False,
-                        error="Cron 表達式必須包含5個部分：分 時 日 月 週"
-                    )
-                
-                # 測試 croniter
-                croniter(cron_expr, datetime.now(self.tz))
-                
-                return ScheduleValidationResponse(
-                    valid=True,
-                    type=ScheduleType.CRON,
-                    description=self._generate_cron_description_from_parts(parts),
-                    next_runs=self._calculate_next_runs_cron(expression)
-                )
-            
-            elif expression.startswith('rate(') and expression.endswith(')'):
-                # 驗證 Rate 表達式
-                rate_expr = expression[5:-1]
-                match = re.match(r'(\d+)\s+(minute|minutes|hour|hours|day|days)', rate_expr)
-                
-                if not match:
-                    return ScheduleValidationResponse(
-                        valid=False,
-                        error="Rate 表達式格式錯誤，應為：rate(數值 單位)"
-                    )
-                
-                value, unit = match.groups()
-                value = int(value)
-                
-                if value <= 0:
-                    return ScheduleValidationResponse(
-                        valid=False,
-                        error="時間間隔必須大於0"
-                    )
-                
-                return ScheduleValidationResponse(
-                    valid=True,
-                    type=ScheduleType.RATE,
-                    description=f"每{value}{unit}執行一次",
-                    next_runs=self._calculate_next_runs_rate(value, unit)
-                )
-            
-            else:
-                return ScheduleValidationResponse(
-                    valid=False,
-                    error="表達式必須以 'cron(' 或 'rate(' 開頭"
-                )
-        
+                return self._validate_cron(expression)
+
+            if expression.startswith('rate(') and expression.endswith(')'):
+                return self._validate_rate(expression)
+
+            return ScheduleValidationResponse(
+                valid=False,
+                error="表達式必須以 'cron(' 或 'rate(' 開頭"
+            )
+
         except Exception as e:
             return ScheduleValidationResponse(
                 valid=False,
                 error=f"表達式驗證失敗: {str(e)}"
             )
+
+    def _validate_cron(self, expression: str) -> ScheduleValidationResponse:
+        """內部方法：驗證 Cron 邏輯"""
+        cron_expr = expression[5:-1]
+        parts = cron_expr.split()
+
+        if len(parts) != CRON_FIELD_COUNT:
+            return ScheduleValidationResponse(
+                valid=False,
+                error="Cron 表達式必須包含5個部分：分 時 日 月 週"
+            )
+
+        # 測試 croniter 是否能解析
+        croniter(cron_expr, datetime.now(self.tz))
+
+        return ScheduleValidationResponse(
+            valid=True,
+            type=ScheduleType.CRON,
+            description=self._generate_cron_description_from_parts(parts),
+            next_runs=self._calculate_next_runs_cron(expression)
+        )
+
+    def _validate_rate(self, expression: str) -> ScheduleValidationResponse:
+        """內部方法：驗證 Rate 邏輯"""
+        rate_expr = expression[5:-1]
+        match = re.match(r'(\d+)\s+(minute|minutes|hour|hours|day|days)', rate_expr)
+
+        if not match:
+            return ScheduleValidationResponse(
+                valid=False,
+                error="Rate 表達式格式錯誤，應為：rate(數值 單位)"
+            )
+
+        value_str, unit = match.groups()
+        value = int(value_str)
+
+        if value <= 0:
+            return ScheduleValidationResponse(valid=False, error="時間間隔必須大於0")
+
+        return ScheduleValidationResponse(
+            valid=True,
+            type=ScheduleType.RATE,
+            description=f"每{value}{unit}執行一次",
+            next_runs=self._calculate_next_runs_rate(value, unit)
+        )
     
     async def get_schedule_templates(self) -> List[ScheduleTemplateResponse]:
         """獲取排程模板"""

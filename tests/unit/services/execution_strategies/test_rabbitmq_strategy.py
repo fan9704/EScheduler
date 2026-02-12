@@ -1,7 +1,6 @@
 import unittest
-from unittest.mock import patch, AsyncMock, MagicMock
+from unittest.mock import patch, AsyncMock
 from src.services.execution_strategies.rabbitmq_strategy import RabbitMQExecutionStrategy
-from src.models.pydantic.strategy import ExecutionResult
 
 
 class TestRabbitMQExecutionStrategy(unittest.IsolatedAsyncioTestCase):

@@ -89,12 +89,12 @@ class RabbitMQExecutionStrategy(ExecutionStrategy):
 
                 # 沒指定 Exchange → Queue
                 else:
-                    queue = await channel.declare_queue(queue_name, durable=True, arguments=queue_args)
+                    await channel.declare_queue(queue_name, durable=True, arguments=queue_args)
                     await channel.default_exchange.publish(message, routing_key=queue_name)
                     target_info = f"Queue: {queue_name}"
 
                 execution_time = asyncio.get_event_loop().time() - start_time
-                rabbitMQ_result = RabbitMQResult(
+                rabbit_mq_result = RabbitMQResult(
                     target=target_info,
                     message_body=message_body,
                     properties=properties,
@@ -105,7 +105,7 @@ class RabbitMQExecutionStrategy(ExecutionStrategy):
                 return ExecutionResult(
                     success=True,
                     message="RabbitMQ 訊息發送成功",
-                    data=rabbitMQ_result,
+                    data=rabbit_mq_result,
                     execution_time=execution_time
                 )
                 

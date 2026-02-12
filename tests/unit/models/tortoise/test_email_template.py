@@ -1,6 +1,4 @@
 import pytest
-from datetime import datetime
-from tests.conftest import in_memory_db
 from src.models.tortoise.email_template import EmailTemplate, EmailTemplateUsage
 
 class TestEmailTemplateModel:

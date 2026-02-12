@@ -335,10 +335,9 @@ class EmailExecutionStrategy(ExecutionStrategy):
             # 使用模板時必須提供 template_id
             if not target_input.get('template_id'):
                 return False
-        else:
-            # 不使用模板時必須提供基本郵件內容
-            if not target_input.get('subject'):
-                return False
+        # 不使用模板時必須提供基本郵件內容
+        elif not target_input.get('subject'):
+            return False
 
         # 驗證郵件地址格式
         email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'

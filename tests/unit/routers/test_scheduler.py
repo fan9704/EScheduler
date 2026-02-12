@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 from fastapi.responses import JSONResponse
+from fastapi import status
 
 from src.models.enum.scheduler import TaskState, TargetType
 from src.models.pydantic.scheduler import (
@@ -176,7 +177,7 @@ async def test_delete_task_success():
     result = await scheduler.delete_task(task_id=3, service=mock_service)
 
     assert isinstance(result, JSONResponse)
-    assert result.status_code == 200
+    assert result.status_code == status.HTTP_200_OK
     assert "任務已成功刪除" in result.body.decode()
     mock_service.delete_task.assert_awaited_once_with(3)
 
@@ -284,7 +285,7 @@ async def test_trigger_task_success():
     mock_service.trigger_task_now.return_value = True
     result = await scheduler.trigger_task(task_id=1, service=mock_service)
     assert isinstance(result, JSONResponse)
-    assert result.status_code == 200
+    assert result.status_code == status.HTTP_200_OK
     assert "任務觸發成功" in result.body.decode()
     mock_service.trigger_task_now.assert_awaited_once_with(1)
 
@@ -295,7 +296,7 @@ async def test_trigger_task_failed():
     mock_service.trigger_task_now.return_value = False
     result = await scheduler.trigger_task(task_id=2, service=mock_service)
     assert isinstance(result, JSONResponse)
-    assert result.status_code == 500
+    assert result.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
     assert "任務執行失敗" in result.body.decode()
     mock_service.trigger_task_now.assert_awaited_once_with(2)
 
@@ -307,7 +308,7 @@ async def test_trigger_task_http_exception():
     result = await scheduler.trigger_task(task_id=1, service=mock_service)
 
     assert isinstance(result, JSONResponse)
-    assert result.status_code == 404
+    assert result.status_code == status.HTTP_404_NOT_FOUND
     assert "Task not found" in result.body.decode()
     mock_service.trigger_task_now.assert_awaited_once_with(1)
 
@@ -320,6 +321,6 @@ async def test_trigger_task_general_exception():
     result = await scheduler.trigger_task(task_id=1, service=mock_service)
 
     assert isinstance(result, JSONResponse)
-    assert result.status_code == 500
+    assert result.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
     assert "觸發任務失敗: Unexpected error" in result.body.decode()
     mock_service.trigger_task_now.assert_awaited_once_with(1)

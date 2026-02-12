@@ -6,6 +6,7 @@ from . import ExecutionStrategy
 from src.models.pydantic.strategy import ExecutionResult, WebhookResult
 from src.configs.strategy_config import get_webhook_config
 from src.utils.logger import logger
+from src.consts import HTTP_OK, HTTP_MULTIPLE_CHOICES
 
 
 class WebhookExecutionStrategy(ExecutionStrategy):
@@ -81,8 +82,7 @@ class WebhookExecutionStrategy(ExecutionStrategy):
                 )
                 response_text = await response.text()
                 execution_time = asyncio.get_event_loop().time() - start_time
-                response_status: int = response.status
-                success = 200 <= response_status < 300
+                success = HTTP_OK <= response.status < HTTP_MULTIPLE_CHOICES
                 webhook_result = WebhookResult(
                     method=method,
                     url=str(response.url),

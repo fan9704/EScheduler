@@ -1,6 +1,6 @@
 import pytest
 from datetime import datetime, timedelta, timezone
-from tests.conftest import in_memory_db
+from fastapi import status
 from src.models.tortoise.scheduler import ScheduledTask, TaskExecution
 from src.models.enum.scheduler import TaskState, TargetType, ExecutionStatus
 
@@ -113,13 +113,13 @@ class TestTaskExecutionModel:
 
         exec_record.status = ExecutionStatus.SUCCEEDED
         exec_record.completed_at = start_time + timedelta(seconds=15)
-        exec_record.response_code = 200
+        exec_record.response_code = status.HTTP_200_OK
         exec_record.response_body = '{"message": "ok"}'
         await exec_record.save()
 
         updated = await TaskExecution.get(id=exec_record.id)
         assert updated.status == ExecutionStatus.SUCCEEDED
-        assert updated.response_code == 200
+        assert updated.response_code == status.HTTP_200_OK
         assert "ok" in updated.response_body
 
     @pytest.mark.asyncio
@@ -144,6 +144,6 @@ class TestTaskExecutionModel:
         )
 
         assert exec_record.status == ExecutionStatus.FAILED
-        assert exec_record.response_code == 500
+        assert exec_record.response_code == status.HTTP_500_INTERNAL_SERVER_ERROR
         assert "Error" in exec_record.error_message
         assert exec_record.attempt_number == 2

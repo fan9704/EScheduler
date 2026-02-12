@@ -1,12 +1,10 @@
 import logging
 import os
 import sys
-import datetime as dt
 from logging.handlers import RotatingFileHandler
 from multiprocessing import Queue
 from logging_loki import LokiQueueHandler
 from pythonjsonlogger import json
-from src.configs import TZ
 
 # 基本日誌配置
 LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')
