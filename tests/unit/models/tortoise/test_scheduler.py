@@ -92,7 +92,10 @@ class TestTaskExecutionModel:
         assert exec_record.id is not None
         assert exec_record.task.id == task.id
         assert exec_record.status == ExecutionStatus.RUNNING
-        assert str(exec_record) == f"TaskExecution({task.name} - {ExecutionStatus.RUNNING})"
+        assert (
+            str(exec_record)
+            == f"TaskExecution({task.name} - {ExecutionStatus.RUNNING})"
+        )
 
     @pytest.mark.asyncio
     async def test_complete_task_execution_success(self, in_memory_db):

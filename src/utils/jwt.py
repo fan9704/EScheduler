@@ -9,6 +9,8 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 
 def jwt_encode_content(content: dict):
+    if SECRET_KEY is None:
+        raise ValueError("SECRET_KEY must be set")
     return jwt.encode(content, SECRET_KEY, algorithm=ALGORITHM)
 
 

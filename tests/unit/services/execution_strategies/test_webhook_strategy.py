@@ -72,11 +72,7 @@ class TestWebhookExecutionStrategy(unittest.IsolatedAsyncioTestCase):
         mock_session_class.return_value.__aexit__.return_value = None
 
         target_arn = "https://example.com/hook"
-        target_input = {
-            "method": "POST",
-            "body": {"data": 1},
-            "secret": "my_secret"
-        }
+        target_input = {"method": "POST", "body": {"data": 1}, "secret": "my_secret"}
 
         result = await self.strategy.execute(target_arn, target_input)
 

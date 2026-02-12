@@ -3,6 +3,7 @@ from enum import Enum
 
 class TaskState(str, Enum):
     """任務狀態枚舉"""
+
     ENABLED = "ENABLED"
     DISABLED = "DISABLED"
     PAUSED = "PAUSED"
@@ -10,6 +11,7 @@ class TaskState(str, Enum):
 
 class TargetType(str, Enum):
     """目標類型枚舉"""
+
     HTTP = "http"
     WEBHOOK = "webhook"
     RABBITMQ = "rabbitmq"  # 替換 SQS
@@ -18,6 +20,7 @@ class TargetType(str, Enum):
 
 class ExecutionStatus(str, Enum):
     """執行狀態枚舉"""
+
     PENDING = "PENDING"
     RUNNING = "RUNNING"
     SUCCEEDED = "SUCCEEDED"
@@ -28,6 +31,7 @@ class ExecutionStatus(str, Enum):
 
 class ScheduleType(str, Enum):
     """排程類型枚舉"""
+
     CRON = "cron"
     RATE = "rate"
     ONE_TIME = "one_time"

@@ -7,15 +7,15 @@ from starlette.responses import Response, JSONResponse
 
 
 class TypedAPIRouter(BaseModel):
-    """ Typed APIRouter. Needed for initializer """
+    """Typed APIRouter. Needed for initializer"""
 
     router: APIRouter
     prefix: str = str()
     tags: typing.List[str] = []
     dependencies: typing.List[Depends] = []
-    responses: typing.Dict[
-        typing.Union[int, str], typing.Dict[str, typing.Any]
-    ] = dict()
+    responses: typing.Dict[typing.Union[int, str], typing.Dict[str, typing.Any]] = (
+        dict()
+    )
     default_response_class: typing.Optional[typing.Type[Response]] = JSONResponse
 
     model_config = ConfigDict(arbitrary_types_allowed=True)

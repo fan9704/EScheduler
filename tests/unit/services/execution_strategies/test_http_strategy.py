@@ -12,10 +12,16 @@ class TestHttpExecutionStrategy(unittest.IsolatedAsyncioTestCase):
 
     async def test_validate_input(self):
         """驗證 URL 與 method"""
-        self.assertTrue(self.strategy.validate_input("https://example.com", {"method": "GET"}))
-        self.assertFalse(self.strategy.validate_input("ftp://example.com", {"method": "GET"}))
+        self.assertTrue(
+            self.strategy.validate_input("https://example.com", {"method": "GET"})
+        )
+        self.assertFalse(
+            self.strategy.validate_input("ftp://example.com", {"method": "GET"})
+        )
         self.assertFalse(self.strategy.validate_input("", {"method": "GET"}))
-        self.assertFalse(self.strategy.validate_input("https://example.com", {"method": "FOO"}))
+        self.assertFalse(
+            self.strategy.validate_input("https://example.com", {"method": "FOO"})
+        )
 
     @patch("aiohttp.ClientSession")
     async def test_execute_success(self, mock_session_class):
@@ -54,7 +60,9 @@ class TestHttpExecutionStrategy(unittest.IsolatedAsyncioTestCase):
         mock_session.request = AsyncMock(return_value=mock_response)
         mock_session_class.return_value.__aenter__.return_value = mock_session
 
-        result = await self.strategy.execute("https://example.com/api", {"method": "GET"})
+        result = await self.strategy.execute(
+            "https://example.com/api", {"method": "GET"}
+        )
 
         self.assertFalse(result.success)
         self.assertEqual(result.status_code, 500)
@@ -63,6 +71,8 @@ class TestHttpExecutionStrategy(unittest.IsolatedAsyncioTestCase):
     @patch("aiohttp.ClientSession", side_effect=Exception("Network error"))
     async def test_execute_exception(self, mock_session_class):
         """模擬連線例外"""
-        result = await self.strategy.execute("https://example.com/api", {"method": "GET"})
+        result = await self.strategy.execute(
+            "https://example.com/api", {"method": "GET"}
+        )
         self.assertFalse(result.success)
         self.assertIn("HTTP 請求異常", result.message)

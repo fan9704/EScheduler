@@ -1,11 +1,11 @@
-from typing import List, Type, TypeVar
+from typing import List, Type, TypeVar, Generic
 from abc import ABC, abstractmethod
 from tortoise import models
 
 T = TypeVar("T", bound=models.Model)
 
 
-class Repository(ABC):
+class Repository(ABC, Generic[T]):
     model: Type[T]
 
     # 初始化 給定 ORM 操作目標

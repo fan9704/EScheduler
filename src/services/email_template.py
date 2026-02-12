@@ -5,8 +5,11 @@ from jinja2 import Environment, BaseLoader, TemplateError
 
 from src.exceptions.exceptions import NotFoundError, ValidationError
 from src.models.pydantic.email_template import (
-    EmailTemplateCreate, EmailTemplateUpdate, EmailTemplateResponse,
-    EmailTemplatePreview, EmailTemplatePreviewResponse
+    EmailTemplateCreate,
+    EmailTemplateUpdate,
+    EmailTemplateResponse,
+    EmailTemplatePreview,
+    EmailTemplatePreviewResponse,
 )
 from src.models.tortoise.email_template import EmailTemplate, EmailTemplateUsage
 from src.utils.logger import logger
@@ -18,7 +21,9 @@ class EmailTemplateService:
     def __init__(self):
         self.jinja_env = Environment(loader=BaseLoader())
 
-    async def create_template(self, template_data: EmailTemplateCreate) -> EmailTemplateResponse:
+    async def create_template(
+        self, template_data: EmailTemplateCreate
+    ) -> EmailTemplateResponse:
         """創建新的 Email 模板"""
         # 檢查名稱是否已存在
         existing = await EmailTemplate.filter(name=template_data.name).first()
@@ -36,16 +41,18 @@ class EmailTemplateService:
             default_sender=template_data.default_sender,
             default_cc=template_data.default_cc,
             default_bcc=template_data.default_bcc,
-            is_active=template_data.is_active
+            is_active=template_data.is_active,
         )
 
         return EmailTemplateResponse.model_validate(template)
 
-    async def list_templates(self,
-                             is_active: Optional[bool] = None,
-                             search: Optional[str] = None,
-                             limit: int = 100,
-                             offset: int = 0) -> List[EmailTemplateResponse]:
+    async def list_templates(
+        self,
+        is_active: Optional[bool] = None,
+        search: Optional[str] = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> List[EmailTemplateResponse]:
         """獲取模板列表"""
         query = EmailTemplate.all()
 
@@ -55,8 +62,10 @@ class EmailTemplateService:
         if search:
             query = query.filter(name__icontains=search)
 
-        templates = await query.order_by('-created_at').limit(limit).offset(offset)
-        return [EmailTemplateResponse.model_validate(template) for template in templates]
+        templates = await query.order_by("-created_at").limit(limit).offset(offset)
+        return [
+            EmailTemplateResponse.model_validate(template) for template in templates
+        ]
 
     async def get_template(self, template_id: int) -> Optional[EmailTemplateResponse]:
         """獲取單個模板"""
@@ -65,8 +74,9 @@ class EmailTemplateService:
             return EmailTemplateResponse.model_validate(template)
         return None
 
-    async def update_template(self, template_id: int,
-                              template_data: EmailTemplateUpdate) -> Optional[EmailTemplateResponse]:
+    async def update_template(
+        self, template_id: int, template_data: EmailTemplateUpdate
+    ) -> Optional[EmailTemplateResponse]:
         """更新模板"""
         template = await EmailTemplate.get_or_none(id=template_id)
         if not template:
@@ -80,8 +90,8 @@ class EmailTemplateService:
 
         # 更新字段
         update_data = template_data.model_dump(exclude_unset=True)
-        if 'variables' in update_data:
-            update_data['variables'] = [var.dict() for var in template_data.variables]
+        if "variables" in update_data:
+            update_data["variables"] = [var.dict() for var in template_data.variables]
 
         await template.update_from_dict(update_data)
         await template.save()
@@ -97,10 +107,14 @@ class EmailTemplateService:
         await template.delete()
         return True
 
-    async def preview_template(self, preview_data: EmailTemplatePreview) -> EmailTemplatePreviewResponse:
+    async def preview_template(
+        self, preview_data: EmailTemplatePreview
+    ) -> EmailTemplatePreviewResponse:
         """預覽模板"""
         try:
-            if preview_data.subject_template and (preview_data.body_template or preview_data.html_template):
+            if preview_data.subject_template and (
+                preview_data.body_template or preview_data.html_template
+            ):
                 # 基於模板內容的預覽（優先）
                 subject_template = preview_data.subject_template
                 body_template = preview_data.body_template
@@ -116,26 +130,23 @@ class EmailTemplateService:
 
             # 渲染模板
             rendered_subject = self._render_template(
-                subject_template,
-                preview_data.variables
+                subject_template, preview_data.variables
             )
             rendered_body = ""
             if body_template:
                 rendered_body = self._render_template(
-                    body_template,
-                    preview_data.variables
+                    body_template, preview_data.variables
                 )
             elif html_template:
                 rendered_body = self._render_template(
-                    html_template,
-                    preview_data.variables
+                    html_template, preview_data.variables
                 )
 
             return EmailTemplatePreviewResponse(
                 subject=rendered_subject,
                 body=rendered_body,
                 html_body="",
-                variables_used=list(preview_data.variables.keys())
+                variables_used=list(preview_data.variables.keys()),
             )
 
         except TemplateError as e:
@@ -144,8 +155,9 @@ class EmailTemplateService:
             logger.error(f"預覽模板時發生錯誤: {str(e)}")
             raise ValidationError(f"預覽失敗: {str(e)}")
 
-    async def get_template_usage_stats(self, template_id: int,
-                                       days: int = 30) -> Dict[str, Any]:
+    async def get_template_usage_stats(
+        self, template_id: int, days: int = 30
+    ) -> Dict[str, Any]:
         """獲取模板使用統計"""
         template = await EmailTemplate.get_or_none(id=template_id)
         if not template:
@@ -157,9 +169,7 @@ class EmailTemplateService:
 
         # 獲取使用記錄
         usage_records = await EmailTemplateUsage.filter(
-            template_id=template_id,
-            used_at__gte=start_date,
-            used_at__lte=end_date
+            template_id=template_id, used_at__gte=start_date, used_at__lte=end_date
         ).all()
 
         return {
@@ -168,12 +178,9 @@ class EmailTemplateService:
             "period_days": days,
             "total_usage": len(usage_records),
             "usage_by_day": [
-                {
-                    "date": record.used_at.date().isoformat(),
-                    "count": 1
-                }
+                {"date": record.used_at.date().isoformat(), "count": 1}
                 for record in usage_records
-            ]
+            ],
         }
 
     def _validate_template_syntax(self, template_str: str) -> None:

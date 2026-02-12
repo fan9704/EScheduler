@@ -1,9 +1,9 @@
 from src.dependencies.repositories import get_scheduled_task_repository
 from src.dependencies.repositories import get_task_execution_repository
-from src.repositories.scheduler import TaskExecutionRepository,ScheduledTaskRepository
+from src.repositories.scheduler import TaskExecutionRepository, ScheduledTaskRepository
+
 
 class TestRepositoryDependencies:
-
     def test_get_scheduler_service_returns_new_instance(self):
         r1 = get_task_execution_repository()
         r2 = get_task_execution_repository()

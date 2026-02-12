@@ -1,15 +1,17 @@
 import pytest
 
 from src.models.pydantic.schedule_helper import (
-    RateExpressionRequest, CronExpressionRequest, QuickScheduleRequest,
-    ScheduleValidationRequest, ScheduleType
+    RateExpressionRequest,
+    CronExpressionRequest,
+    QuickScheduleRequest,
+    ScheduleValidationRequest,
+    ScheduleType,
 )
 from src.services.schedule_helper import ScheduleHelperService
 
 
 @pytest.mark.asyncio
 class TestScheduleHelperService:
-
     @pytest.fixture
     def service(self):
         return ScheduleHelperService()
@@ -23,7 +25,9 @@ class TestScheduleHelperService:
         assert len(res.next_runs) == 5
 
     async def test_generate_cron_expression(self, service):
-        req = CronExpressionRequest(minute="0", hour="9", day="*", month="*", weekday="1-5")
+        req = CronExpressionRequest(
+            minute="0", hour="9", day="*", month="*", weekday="1-5"
+        )
         res = await service.generate_cron_expression(req)
         assert res.expression == "cron(0 9 * * 1-5)"
         assert res.type == ScheduleType.CRON
@@ -39,7 +43,7 @@ class TestScheduleHelperService:
         assert len(res.next_runs) == 5
 
     async def test_generate_quick_schedule_custom_time(self, service):
-        req = QuickScheduleRequest(type="custom_time", time="08:30", weekdays=[1,2])
+        req = QuickScheduleRequest(type="custom_time", time="08:30", weekdays=[1, 2])
         res = await service.generate_quick_schedule(req)
         assert res.expression.startswith("cron(")
         assert res.type == ScheduleType.CRON

@@ -1,5 +1,5 @@
 import datetime as dt
-from typing import List
+from typing import List, Optional
 from zoneinfo import ZoneInfo
 
 from src.models.enum.scheduler import TaskState, ExecutionStatus
@@ -23,18 +23,25 @@ class ScheduledTaskRepository(Repository):
         """根據目標類型獲取任務"""
         return await self.model.filter(target_type=target_type)
 
-    async def get_tasks_by_state_and_target_type(self, state: TaskState, target_type: str) -> List[ScheduledTask]:
+    async def get_tasks_by_state_and_target_type(
+        self, state: TaskState, target_type: str
+    ) -> List[ScheduledTask]:
         """根據狀態和目標類型獲取任務"""
         return await self.model.filter(state=state, target_type=target_type)
 
-    async def update_execution_time(self, task_id: int, last_execution: dt.datetime, next_execution: dt.datetime = None):
+    async def update_execution_time(
+        self,
+        task_id: int,
+        last_execution: dt.datetime,
+        next_execution: Optional[dt.datetime] = None,
+    ):
         """更新任務執行時間"""
         update_data = {
             "last_execution_time": last_execution,
         }
         if next_execution:
             update_data["next_execution_time"] = next_execution
-            
+
         await self.model.filter(id=task_id).update(**update_data)
 
     async def increment_execution_count(self, task_id: int):
@@ -50,11 +57,12 @@ class ScheduledTaskRepository(Repository):
     async def search_tasks(self, keyword: str) -> List[ScheduledTask]:
         """搜索任務"""
         return await self.model.filter(name__icontains=keyword)
-    
+
     # Statistic methods
     async def count_tasks_by_state(self, state: TaskState) -> int:
         """統計特定狀態的任務數量"""
         return await self.model.filter(state=state).count()
+
     async def count_all_tasks(self) -> int:
         """統計所有任務數量"""
         return await self.model.all().count()
@@ -77,24 +85,32 @@ class TaskExecutionRepository(Repository):
         """獲取最近的執行記錄"""
         return await self.model.all().order_by("-started_at").limit(limit)
 
-    async def get_executions_by_status(self, status: ExecutionStatus) -> List[TaskExecution]:
+    async def get_executions_by_status(
+        self, status: ExecutionStatus
+    ) -> List[TaskExecution]:
         """根據狀態獲取執行記錄"""
         return await self.model.filter(status=status)
 
-    async def get_executions_by_date_range(self, start_date: dt.datetime, end_date: dt.datetime) -> List[TaskExecution]:
+    async def get_executions_by_date_range(
+        self, start_date: dt.datetime, end_date: dt.datetime
+    ) -> List[TaskExecution]:
         """根據日期範圍獲取執行記錄"""
         return await self.model.filter(
-            started_at__gte=start_date,
-            started_at__lte=end_date
+            started_at__gte=start_date, started_at__lte=end_date
         )
 
-    async def update_execution_result(self, execution_id: int, status: ExecutionStatus, 
-                                    response_code: int = None, response_body: str = None, 
-                                    error_message: str = None):
+    async def update_execution_result(
+        self,
+        execution_id: int,
+        status: ExecutionStatus,
+        response_code: Optional[int] = None,
+        response_body: Optional[str] = None,
+        error_message: Optional[str] = None,
+    ):
         """更新執行結果"""
         update_data = {
             "status": status,
-            "completed_at": self._get_timezone_aware_now()  # 使用帶時區的時間
+            "completed_at": self._get_timezone_aware_now(),  # 使用帶時區的時間
         }
         if response_code is not None:
             update_data["response_code"] = response_code
@@ -102,7 +118,7 @@ class TaskExecutionRepository(Repository):
             update_data["response_body"] = response_body
         if error_message is not None:
             update_data["error_message"] = error_message
-            
+
         await self.model.filter(id=execution_id).update(**update_data)
 
     async def count_today_executions(self) -> int:
@@ -110,8 +126,7 @@ class TaskExecutionRepository(Repository):
         now = self._get_timezone_aware_now()
         start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
         end_of_day = now.replace(hour=23, minute=59, second=59, microsecond=999999)
-        
+
         return await self.model.filter(
-            started_at__gte=start_of_day,
-            started_at__lte=end_of_day
+            started_at__gte=start_of_day, started_at__lte=end_of_day
         ).count()

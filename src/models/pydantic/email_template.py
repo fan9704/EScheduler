@@ -13,38 +13,47 @@ EmailTemplateUsagePydantic = pydantic_model_creator(EmailTemplateUsage)
 
 class TemplateVariable(BaseModel):
     """模板變數定義"""
+
     name: str = Field(..., description="變數名稱")
-    type: str = Field("string", description="變數類型: string, number, email, date, boolean")
+    type: str = Field(
+        "string", description="變數類型: string, number, email, date, boolean"
+    )
     description: Optional[str] = Field(None, description="變數描述")
     required: bool = Field(False, description="是否必填")
     default_value: Optional[Any] = Field(None, description="預設值")
     validation_pattern: Optional[str] = Field(None, description="驗證正則表達式")
-    
-    @field_validator('type')
+
+    @field_validator("type")
     @classmethod
     def validate_type(cls, v):
-        allowed_types = ['string', 'number', 'email', 'date', 'boolean']
+        allowed_types = ["string", "number", "email", "date", "boolean"]
         if v not in allowed_types:
-            raise ValueError(f'變數類型必須是: {", ".join(allowed_types)}')
+            raise ValueError(f"變數類型必須是: {', '.join(allowed_types)}")
         return v
 
 
 class EmailTemplateCreate(BaseModel):
     """創建 Email 模板請求模型"""
+
     name: str = Field(..., min_length=1, max_length=255, description="模板名稱")
     description: Optional[str] = Field(None, description="模板描述")
-    subject_template: str = Field(..., min_length=1, max_length=500, description="主旨模板")
+    subject_template: str = Field(
+        ..., min_length=1, max_length=500, description="主旨模板"
+    )
     body_template: str = Field(..., min_length=1, description="內容模板")
     html_template: Optional[str] = Field(None, description="HTML 模板")
     variables: List[TemplateVariable] = Field(default=[], description="模板變數定義")
     default_sender: Optional[EmailStr] = Field(None, description="預設寄件人")
     default_cc: Optional[List[EmailStr]] = Field(None, description="預設副本收件人")
-    default_bcc: Optional[List[EmailStr]] = Field(None, description="預設密件副本收件人")
+    default_bcc: Optional[List[EmailStr]] = Field(
+        None, description="預設密件副本收件人"
+    )
     is_active: bool = Field(True, description="是否啟用")
 
 
 class EmailTemplateUpdate(BaseModel):
     """更新 Email 模板請求模型"""
+
     name: Optional[str] = Field(None, min_length=1, max_length=255)
     description: Optional[str] = None
     subject_template: Optional[str] = Field(None, min_length=1, max_length=500)
@@ -59,6 +68,7 @@ class EmailTemplateUpdate(BaseModel):
 
 class EmailTemplateResponse(BaseModel):
     """Email 模板回應模型"""
+
     id: int
     name: str
     description: Optional[str]
@@ -81,6 +91,7 @@ class EmailTemplateResponse(BaseModel):
 
 class EmailTemplatePreview(BaseModel):
     """Email 模板預覽請求模型"""
+
     subject_template: Optional[str] = Field(None, description="主旨模板")
     body_template: Optional[str] = Field(None, description="內容模板")
     html_template: Optional[str] = Field(None, description="HTML 模板")
@@ -89,6 +100,7 @@ class EmailTemplatePreview(BaseModel):
 
 class EmailTemplatePreviewResponse(BaseModel):
     """Email 模板預覽回應模型"""
+
     subject: str = Field(..., description="渲染後的主旨")
     body: str = Field(..., description="渲染後的內容")
     html_body: Optional[str] = Field(None, description="渲染後的 HTML")
@@ -97,51 +109,53 @@ class EmailTemplatePreviewResponse(BaseModel):
 
 class EmailTaskCreate(BaseModel):
     """創建 Email 任務請求模型"""
+
     # 基本任務資訊
     name: str = Field(..., min_length=1, max_length=255, description="任務名稱")
     description: Optional[str] = Field(None, description="任務描述")
     schedule_expression: str = Field(..., description="排程表達式")
     timezone: str = Field("Asia/Taipei", description="時區")
-    
+
     # Email 特定設定
     use_template: bool = Field(False, description="是否使用模板")
     template_id: Optional[int] = Field(None, description="模板 ID")
     template_variables: Optional[Dict[str, Any]] = Field(None, description="模板變數值")
-    
+
     # 直接 Email 設定 (不使用模板時)
     subject: Optional[str] = Field(None, description="郵件主旨")
     body: Optional[str] = Field(None, description="郵件內容")
     html_body: Optional[str] = Field(None, description="HTML 內容")
-    
+
     # 收件人設定
     recipients: List[EmailStr] = Field(..., min_length=1, description="收件人列表")
     cc: Optional[List[EmailStr]] = Field(None, description="副本收件人")
     bcc: Optional[List[EmailStr]] = Field(None, description="密件副本收件人")
     sender: Optional[EmailStr] = Field(None, description="寄件人")
-    
+
     # 任務設定
     max_retry_attempts: int = Field(3, ge=0, le=10, description="最大重試次數")
     retry_policy: Optional[Dict[str, Any]] = Field(None, description="重試策略")
-    
-    @field_validator('template_id')
+
+    @field_validator("template_id")
     @classmethod
     def validate_template_usage(cls, v, info):
-        use_template = info.data.get('use_template', False)
+        use_template = info.data.get("use_template", False)
         if use_template and not v:
-            raise ValueError('使用模板時必須提供 template_id')
+            raise ValueError("使用模板時必須提供 template_id")
         return v
 
-    @field_validator('subject')
+    @field_validator("subject")
     @classmethod
     def validate_direct_email_fields(cls, v, info):
-        use_template = info.data.get('use_template', False)
+        use_template = info.data.get("use_template", False)
         if not use_template and not v:
-            raise ValueError('不使用模板時必須提供 subject')
+            raise ValueError("不使用模板時必須提供 subject")
         return v
 
 
 class EmailTaskUpdate(BaseModel):
     """更新 Email 任務請求模型"""
+
     name: Optional[str] = Field(None, min_length=1, max_length=255)
     description: Optional[str] = None
     schedule_expression: Optional[str] = None
@@ -162,6 +176,7 @@ class EmailTaskUpdate(BaseModel):
 
 class EmailTaskResponse(BaseModel):
     """Email 任務回應模型"""
+
     id: int
     name: str
     description: Optional[str]
@@ -177,7 +192,7 @@ class EmailTaskResponse(BaseModel):
     max_retry_attempts: int
     created_at: dt.datetime
     updated_at: dt.datetime
-    
+
     # Email 特定資訊
     use_template: bool
     template_id: Optional[int]
@@ -189,15 +204,16 @@ class EmailTaskResponse(BaseModel):
 
 class EmailSendRequest(BaseModel):
     """立即發送 Email 請求模型"""
+
     use_template: bool = Field(False, description="是否使用模板")
     template_id: Optional[int] = Field(None, description="模板 ID")
     template_variables: Optional[Dict[str, Any]] = Field(None, description="模板變數值")
-    
+
     # 直接 Email 設定
     subject: Optional[str] = Field(None, description="郵件主旨")
     body: Optional[str] = Field(None, description="郵件內容")
     html_body: Optional[str] = Field(None, description="HTML 內容")
-    
+
     # 收件人設定
     recipients: List[EmailStr] = Field(..., min_length=1, description="收件人列表")
     cc: Optional[List[EmailStr]] = Field(None, description="副本收件人")
@@ -207,6 +223,7 @@ class EmailSendRequest(BaseModel):
 
 class EmailSendResponse(BaseModel):
     """Email 發送回應模型"""
+
     success: bool = Field(..., description="是否發送成功")
     message: str = Field(..., description="發送結果訊息")
     usage_id: Optional[int] = Field(None, description="使用記錄 ID")

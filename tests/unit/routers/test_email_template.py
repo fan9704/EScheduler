@@ -15,6 +15,7 @@ from src.models.pydantic.email_template import (
 # ✅ 建立 Email Template 測試
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_create_email_template_success():
     """測試成功建立 Email Template"""
@@ -74,6 +75,7 @@ async def test_create_email_template_exception():
 # ✅ 取得 Template 測試
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_get_email_template_not_found():
     """測試找不到 Template"""
@@ -102,6 +104,7 @@ async def test_get_email_template_success():
 # ✅ 更新 Template 測試
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_update_email_template_success():
     """測試成功更新 Template"""
@@ -110,7 +113,9 @@ async def test_update_email_template_success():
 
     payload = EmailTemplateUpdate(name="Updated")
 
-    result = await email_template.update_email_template(1, payload, service=mock_service)
+    result = await email_template.update_email_template(
+        1, payload, service=mock_service
+    )
     assert result["name"] == "Updated"
     mock_service.update_template.assert_awaited_once_with(1, payload)
 
@@ -134,6 +139,7 @@ async def test_update_email_template_not_found():
 # ✅ 刪除 Template 測試
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_delete_email_template_exception():
     """測試刪除失敗"""
@@ -150,6 +156,7 @@ async def test_delete_email_template_exception():
 # ---------------------------------------------------------------------------
 # ✅ 預覽 Template 測試
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_preview_email_template_success():
@@ -187,11 +194,7 @@ async def test_list_templates_success():
     ]
 
     result = await email_template.list_templates(
-        is_active=True,
-        search="Welcome",
-        limit=10,
-        offset=0,
-        service=mock_service
+        is_active=True, search="Welcome", limit=10, offset=0, service=mock_service
     )
 
     assert len(result) == 2
@@ -206,9 +209,7 @@ async def test_list_templates_exception():
     mock_service.list_templates.side_effect = Exception("DB Error")
 
     with pytest.raises(Exception) as exc_info:
-        await email_template.list_templates(
-            service=mock_service
-        )
+        await email_template.list_templates(service=mock_service)
     # 可以加 logger 檢查或直接 assert Exception message
     assert "DB Error" in str(exc_info.value)
 
@@ -219,7 +220,9 @@ async def test_list_templates_exception():
 @pytest.mark.asyncio
 async def test_delete_email_template_success():
     mock_service = AsyncMock()
-    mock_service.delete_template.return_value = None  # delete 沒有回傳，router 成功會 204
+    mock_service.delete_template.return_value = (
+        None  # delete 沒有回傳，router 成功會 204
+    )
 
     response = await email_template.delete_email_template(1, service=mock_service)
 

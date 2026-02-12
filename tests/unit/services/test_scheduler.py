@@ -14,7 +14,6 @@ from src.services.scheduler import SchedulerService
 
 @pytest.mark.asyncio
 class TestSchedulerService:
-
     async def async_set_up_service(self):
         service = SchedulerService()
 
@@ -44,9 +43,11 @@ class TestSchedulerService:
         # mock strategy
         service.strategy_factory.create_strategy = MagicMock()
         mock_strategy = AsyncMock()
-        mock_strategy.execute = AsyncMock(return_value=MagicMock(
-            success=True, status_code=200, message="ok", execution_time=0.1
-        ))
+        mock_strategy.execute = AsyncMock(
+            return_value=MagicMock(
+                success=True, status_code=200, message="ok", execution_time=0.1
+            )
+        )
         service.strategy_factory.create_strategy.return_value = mock_strategy
 
         return service
@@ -59,7 +60,7 @@ class TestSchedulerService:
             target_arn="http://example.com/endpoint",
             schedule_expression="rate(5 minutes)",
             timezone="Asia/Taipei",
-            state=TaskState.ENABLED
+            state=TaskState.ENABLED,
         )
 
         now = datetime.now(timezone.utc)
@@ -81,7 +82,7 @@ class TestSchedulerService:
             retry_policy={},
             dead_letter_config={},
             created_at=now,
-            updated_at=now
+            updated_at=now,
         )
 
         service.task_repository.get_by_name.return_value = None
@@ -99,7 +100,7 @@ class TestSchedulerService:
             target_arn="http://example.com/endpoint",
             schedule_expression="rate(5 minutes)",
             timezone="Asia/Taipei",
-            state=TaskState.ENABLED
+            state=TaskState.ENABLED,
         )
         service.task_repository.get_by_name.return_value = MagicMock()
         with pytest.raises(HTTPException):
@@ -125,7 +126,7 @@ class TestSchedulerService:
             retry_policy={},
             dead_letter_config={},
             created_at=now,
-            updated_at=now
+            updated_at=now,
         )
 
         service.task_repository.get_by_id.return_value = mock_task
@@ -174,7 +175,7 @@ class TestSchedulerService:
             retry_policy={},
             dead_letter_config={},
             created_at=now,
-            updated_at=now
+            updated_at=now,
         )
 
         service.task_repository.get_by_id.return_value = mock_task
@@ -207,7 +208,7 @@ class TestSchedulerService:
             retry_policy={},
             dead_letter_config={},
             created_at=now,
-            updated_at=now
+            updated_at=now,
         )
 
         service.task_repository.find_all.return_value = [mock_task]
@@ -234,7 +235,7 @@ class TestSchedulerService:
             response_code=200,
             response_body=response_body_str,
             error_message=None,
-            attempt_number=1
+            attempt_number=1,
         )
 
         service.execution_repository.get_by_task_id.return_value = [mock_execution]
