@@ -1,7 +1,6 @@
 import pytest
-from datetime import datetime
-from tests.conftest import in_memory_db
 from src.models.tortoise.email_template import EmailTemplate, EmailTemplateUsage
+
 
 class TestEmailTemplateModel:
     @pytest.mark.asyncio
@@ -29,7 +28,6 @@ class TestEmailTemplateModel:
         assert tpl.name == "welcome_email"
         assert tpl.get_variable_names() == ["name", "age", "contact"]
 
-
     @pytest.mark.asyncio
     async def test_validate_variables_success(self, in_memory_db):
         """測試變數驗證通過"""
@@ -47,7 +45,6 @@ class TestEmailTemplateModel:
         provided = {"email": "user@example.com", "age": 25}
         errors = tpl.validate_variables(provided)
         assert errors == {}
-
 
     @pytest.mark.asyncio
     async def test_validate_variables_missing_required(self, in_memory_db):
@@ -67,7 +64,6 @@ class TestEmailTemplateModel:
         errors = tpl.validate_variables(provided)
         assert "token" in errors
         assert "未提供" in errors["token"]
-
 
     @pytest.mark.asyncio
     async def test_validate_variables_invalid_email_and_number(self, in_memory_db):
@@ -89,7 +85,6 @@ class TestEmailTemplateModel:
         assert "不是有效的 email 格式" in errors["email"]
         assert "amount" in errors
         assert "必須是數字" in errors["amount"]
-
 
     @pytest.mark.asyncio
     async def test_email_template_usage_create(self, in_memory_db):

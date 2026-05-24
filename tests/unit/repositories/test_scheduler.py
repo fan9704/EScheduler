@@ -29,6 +29,7 @@ async def test_get_by_name(mocker):
     mock_first.assert_awaited_once()
     assert result == mock_task
 
+
 @pytest.mark.asyncio
 async def test_get_tasks_by_state(mocker):
     repo = ScheduledTaskRepository()
@@ -61,7 +62,9 @@ async def test_get_tasks_by_state_and_target_type(mocker):
 
     result = await repo.get_tasks_by_state_and_target_type(TaskState.PAUSED, "api")
 
-    ScheduledTask.filter.assert_called_once_with(state=TaskState.PAUSED, target_type="api")
+    ScheduledTask.filter.assert_called_once_with(
+        state=TaskState.PAUSED, target_type="api"
+    )
     assert result == mock_tasks
 
 
@@ -69,20 +72,26 @@ async def test_get_tasks_by_state_and_target_type(mocker):
 async def test_update_execution_time_with_next(mocker):
     repo = ScheduledTaskRepository()
     mock_update = AsyncMock()
-    mocker.patch.object(ScheduledTask, "filter", return_value=MagicMock(update=mock_update))
+    mocker.patch.object(
+        ScheduledTask, "filter", return_value=MagicMock(update=mock_update)
+    )
 
     now = datetime.now()
     next_time = datetime.now()
     await repo.update_execution_time(1, now, next_time)
 
-    mock_update.assert_awaited_once_with(last_execution_time=now, next_execution_time=next_time)
+    mock_update.assert_awaited_once_with(
+        last_execution_time=now, next_execution_time=next_time
+    )
 
 
 @pytest.mark.asyncio
 async def test_update_execution_time_without_next(mocker):
     repo = ScheduledTaskRepository()
     mock_update = AsyncMock()
-    mocker.patch.object(ScheduledTask, "filter", return_value=MagicMock(update=mock_update))
+    mocker.patch.object(
+        ScheduledTask, "filter", return_value=MagicMock(update=mock_update)
+    )
 
     now = datetime.now()
     await repo.update_execution_time(1, now)
@@ -108,7 +117,9 @@ async def test_increment_execution_count(mocker):
 async def test_update_state(mocker):
     repo = ScheduledTaskRepository()
     mock_update = AsyncMock()
-    mocker.patch.object(ScheduledTask, "filter", return_value=MagicMock(update=mock_update))
+    mocker.patch.object(
+        ScheduledTask, "filter", return_value=MagicMock(update=mock_update)
+    )
 
     await repo.update_state(1, TaskState.ENABLED)
     mock_update.assert_awaited_once_with(state=TaskState.ENABLED)
@@ -159,7 +170,11 @@ async def test_count_all_tasks(mocker):
 async def test_get_by_task_id(mocker):
     repo = TaskExecutionRepository()
     mock_execs = [MagicMock(TaskExecution)]
-    mocker.patch.object(TaskExecution, "filter", return_value=MagicMock(order_by=AsyncMock(return_value=mock_execs)))
+    mocker.patch.object(
+        TaskExecution,
+        "filter",
+        return_value=MagicMock(order_by=AsyncMock(return_value=mock_execs)),
+    )
 
     result = await repo.get_by_task_id(123)
 
@@ -171,7 +186,11 @@ async def test_get_by_task_id(mocker):
 async def test_get_recent_executions(mocker):
     repo = TaskExecutionRepository()
     mock_execs = [MagicMock(TaskExecution)]
-    mock_all = MagicMock(order_by=MagicMock(return_value=MagicMock(limit=AsyncMock(return_value=mock_execs))))
+    mock_all = MagicMock(
+        order_by=MagicMock(
+            return_value=MagicMock(limit=AsyncMock(return_value=mock_execs))
+        )
+    )
     mocker.patch.object(TaskExecution, "all", return_value=mock_all)
 
     result = await repo.get_recent_executions(10)
@@ -212,22 +231,26 @@ async def test_get_executions_by_date_range(mocker):
 async def test_update_execution_result(mocker):
     repo = TaskExecutionRepository()
     mock_update = AsyncMock()
-    mocker.patch.object(TaskExecution, "filter", return_value=MagicMock(update=mock_update))
-    mocker.patch.object(repo, "_get_timezone_aware_now", return_value=datetime(2025, 1, 1))
+    mocker.patch.object(
+        TaskExecution, "filter", return_value=MagicMock(update=mock_update)
+    )
+    mocker.patch.object(
+        repo, "_get_timezone_aware_now", return_value=datetime(2025, 1, 1)
+    )
 
     await repo.update_execution_result(
         execution_id=5,
         status=ExecutionStatus.SUCCEEDED,
         response_code=200,
         response_body="OK",
-        error_message=None
+        error_message=None,
     )
 
     mock_update.assert_awaited_once_with(
         status=ExecutionStatus.SUCCEEDED,
         completed_at=datetime(2025, 1, 1),
         response_code=200,
-        response_body="OK"
+        response_body="OK",
     )
 
 
@@ -237,7 +260,11 @@ async def test_count_today_executions(mocker):
     mock_count = AsyncMock(return_value=3)
     mock_filter = MagicMock(count=mock_count)
     mocker.patch.object(TaskExecution, "filter", return_value=mock_filter)
-    mocker.patch.object(repo, "_get_timezone_aware_now", return_value=datetime(2025, 1, 1, 12, 0, tzinfo=ZoneInfo("Asia/Taipei")))
+    mocker.patch.object(
+        repo,
+        "_get_timezone_aware_now",
+        return_value=datetime(2025, 1, 1, 12, 0, tzinfo=ZoneInfo("Asia/Taipei")),
+    )
 
     result = await repo.count_today_executions()
 

@@ -24,14 +24,59 @@ dependencies = [
     "aiohttp (>=3.12.15,<4.0.0)",
     "aio-pika (>=9.5.7,<10.0.0)",
     "aiosmtplib (>=4.0.1,<5.0.0)",
-    "jinja2>=3.1.6",
+    "jinja2>=3.1.6"
 ]
 
 [dependency-groups]
 dev = [
+    "mypy>=1.19.1",
+    "pre-commit>=4.5.1",
     "pytest>=8.4.2",
     "pytest-asyncio>=1.2.0",
     "pytest-cov>=7.0.0",
     "pytest-dotenv>=0.5.2",
     "pytest-mock>=3.15.1",
+    "ruff>=0.15.0",
+    "types-croniter>=6.0.0.20250809",
+    "types-python-jose>=3.5.0.20250531",
 ]
+
+[tool.ruff.lint]
+select = [
+    "F", # Pyflakes
+    "N", # PEP8-Naming
+    "PLR", # Pylint-Refactor
+]
+
+ignore = [
+    "F401", # unused import
+    "F403", # import *
+    "PLR0913", # Too many argument
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = [
+    "PLR2004", # 允許測試碼使用 magic numbers
+    "S101",    # 允許使用 assert
+]
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+# 解決 "By default the bodies of untyped functions are not checked"
+check_untyped_defs = true
+
+[[tool.mypy.overrides]]
+# 測試資料夾可以放寬檢查
+module = "tests.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = [
+    "apscheduler.*",
+    "logging_loki.*",
+    "croniter.*",
+    "jose.*"
+]
+ignore_missing_imports = true

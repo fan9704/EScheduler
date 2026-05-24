@@ -15,6 +15,7 @@ from src.routers import schedule_helper
 # ✅ 測試 Rate Expression
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_generate_rate_expression_success():
     """測試成功生成 Rate 排程表達式"""
@@ -26,7 +27,9 @@ async def test_generate_rate_expression_success():
 
     payload = RateExpressionRequest(value=5, unit="minutes")
 
-    result = await schedule_helper.generate_rate_expression(payload, service=mock_service)
+    result = await schedule_helper.generate_rate_expression(
+        payload, service=mock_service
+    )
 
     assert result["expression"] == "rate(5 minutes)"
     mock_service.generate_rate_expression.assert_awaited_once_with(payload)
@@ -35,6 +38,7 @@ async def test_generate_rate_expression_success():
 # ---------------------------------------------------------------------------
 # ✅ 測試 Cron Expression
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_generate_cron_expression_success():
@@ -53,7 +57,9 @@ async def test_generate_cron_expression_success():
         year="*",
     )
 
-    result = await schedule_helper.generate_cron_expression(payload, service=mock_service)
+    result = await schedule_helper.generate_cron_expression(
+        payload, service=mock_service
+    )
 
     assert "cron" in result["expression"]
     mock_service.generate_cron_expression.assert_awaited_once_with(payload)
@@ -62,6 +68,7 @@ async def test_generate_cron_expression_success():
 # ---------------------------------------------------------------------------
 # ✅ 測試 Quick Schedule
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_generate_quick_schedule_success():
@@ -72,12 +79,12 @@ async def test_generate_quick_schedule_success():
     )
 
     payload = QuickScheduleRequest(
-        type="custom_time",
-        time="09:30",
-        weekdays=[1, 2, 3, 4, 5]
+        type="custom_time", time="09:30", weekdays=[1, 2, 3, 4, 5]
     )
 
-    result = await schedule_helper.generate_quick_schedule(payload, service=mock_service)
+    result = await schedule_helper.generate_quick_schedule(
+        payload, service=mock_service
+    )
 
     assert result["expression"] == "rate(1 hour)"
     mock_service.generate_quick_schedule.assert_awaited_once_with(payload)
@@ -86,6 +93,7 @@ async def test_generate_quick_schedule_success():
 # ---------------------------------------------------------------------------
 # ✅ 測試 Validate Expression
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_validate_schedule_expression_success():
@@ -97,7 +105,9 @@ async def test_validate_schedule_expression_success():
 
     payload = ScheduleValidationRequest(expression="rate(5 minutes)")
 
-    result = await schedule_helper.validate_schedule_expression(payload, service=mock_service)
+    result = await schedule_helper.validate_schedule_expression(
+        payload, service=mock_service
+    )
 
     assert result["valid"] is True
     assert result["message"] == "Valid expression"
@@ -107,6 +117,7 @@ async def test_validate_schedule_expression_success():
 # ---------------------------------------------------------------------------
 # ✅ 測試取得排程模板
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_get_schedule_templates_success():
@@ -126,6 +137,7 @@ async def test_get_schedule_templates_success():
 # ---------------------------------------------------------------------------
 # ✅ 測試取得 Cron Help
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_get_cron_help_success():

@@ -1,7 +1,8 @@
 import unittest
-from unittest.mock import patch, AsyncMock, MagicMock
-from src.services.execution_strategies.rabbitmq_strategy import RabbitMQExecutionStrategy
-from src.models.pydantic.strategy import ExecutionResult
+from unittest.mock import patch, AsyncMock
+from src.services.execution_strategies.rabbitmq_strategy import (
+    RabbitMQExecutionStrategy,
+)
 
 
 class TestRabbitMQExecutionStrategy(unittest.IsolatedAsyncioTestCase):
@@ -51,7 +52,7 @@ class TestRabbitMQExecutionStrategy(unittest.IsolatedAsyncioTestCase):
             "exchange": "my_exchange",
             "exchange_type": "fanout",
             "routing_key": "rk1",
-            "message": {"hello": "world"}
+            "message": {"hello": "world"},
         }
 
         result = await self.strategy.execute(target_arn, target_input)

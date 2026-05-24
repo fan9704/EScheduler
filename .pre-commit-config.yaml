@@ -1,0 +1,28 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace      # 移除行尾空格
+      - id: end-of-file-fixer        # 確保檔案結尾有換行
+      - id: check-yaml               # 檢查 YAML 格式
+      - id: check-added-large-files  # 防止提交大型二進制檔案
+      - id: check-ast                # 檢查 Python 語法是否正確
+
+  # 使用 Ruff
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.9.6
+    hooks:
+      # 執行 Linter (包含自動修復)
+      - id: ruff
+        args: [ --fix ]
+      # 執行 Formatter (排版)
+      - id: ruff-format
+
+#  # 靜態型別檢查 (建議加上，對大型專案很有幫助)
+#  - repo: https://github.com/pre-commit/mirrors-mypy
+#    rev: v1.15.0
+#    hooks:
+#      - id: mypy
+#        additional_dependencies: [types-all] # 依據需求增加
+#        # 如果你想讓 pre-commit 跑得快一點，可以只針對 src 檢查
+#        # args: [--ignore-missing-imports, --explicit-package-bases]

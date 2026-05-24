@@ -4,7 +4,7 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
-import src.utils.schedule as schedule
+from src.utils import schedule
 
 
 class TestGetTimezoneAwareNow:
@@ -71,7 +71,9 @@ class TestMatchRateExpressionReturnDelta:
             def groups(self):
                 return ("5", "weeks")
 
-        with patch("src.utils.schedule.match_rate_expression", return_value=FakeMatch()):
+        with patch(
+            "src.utils.schedule.match_rate_expression", return_value=FakeMatch()
+        ):
             with pytest.raises(ValueError, match="不支援的時間單位: weeks"):
                 schedule.match_rate_expression_return_delta("5 weeks")
 

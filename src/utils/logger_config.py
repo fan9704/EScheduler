@@ -1,30 +1,29 @@
 import logging
 import os
 import sys
-import datetime as dt
 from logging.handlers import RotatingFileHandler
 from multiprocessing import Queue
 from logging_loki import LokiQueueHandler
 from pythonjsonlogger import json
-from src.configs import TZ
 
 # 基本日誌配置
-LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')
-LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-JSON_LOG_FORMAT = '%(timestamp)s %(level)s %(name)s %(message)s'
+LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
+LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+JSON_LOG_FORMAT = "%(timestamp)s %(level)s %(name)s %(message)s"
 
 # 日誌文件配置
-LOG_DIR = 'logs'
+LOG_DIR = "logs"
 MAX_BYTES = 10 * 1024 * 1024  # 10MB
 BACKUP_COUNT = 5
 
 # Loki 配置
-ENABLE_LOKI_LOGGING = os.environ.get('ENABLE_LOKI_LOGGING') == "True"
+ENABLE_LOKI_LOGGING = os.environ.get("ENABLE_LOKI_LOGGING") == "True"
 LOKI_ENDPOINT = os.environ.get(
-    'LOKI_ENDPOINT', 'http://127.0.0.1:3100/loki/api/v1/push')
+    "LOKI_ENDPOINT", "http://127.0.0.1:3100/loki/api/v1/push"
+)
 
 
-def setup_logger(name='fastapi-app'):
+def setup_logger(name="fastapi-app"):
     """設定結構化日誌系統
 
     Args:
@@ -47,9 +46,9 @@ def setup_logger(name='fastapi-app'):
 
     # 配置文件輸出（JSON格式）
     json_handler = RotatingFileHandler(
-        os.path.join(LOG_DIR, f'{name}.json'),
+        os.path.join(LOG_DIR, f"{name}.json"),
         maxBytes=MAX_BYTES,
-        backupCount=BACKUP_COUNT
+        backupCount=BACKUP_COUNT,
     )
     json_formatter = json.JsonFormatter(JSON_LOG_FORMAT)
     json_handler.setFormatter(json_formatter)
@@ -57,9 +56,9 @@ def setup_logger(name='fastapi-app'):
 
     # 配置錯誤日誌
     error_handler = RotatingFileHandler(
-        os.path.join(LOG_DIR, f'{name}.error.log'),
+        os.path.join(LOG_DIR, f"{name}.error.log"),
         maxBytes=MAX_BYTES,
-        backupCount=BACKUP_COUNT
+        backupCount=BACKUP_COUNT,
     )
     error_handler.setLevel(logging.ERROR)
     error_handler.setFormatter(logging.Formatter(LOG_FORMAT))
@@ -68,10 +67,7 @@ def setup_logger(name='fastapi-app'):
         print("啟動 Loki 配置之中")
         # 配置 Loki 輸出
         loki_handler = LokiQueueHandler(
-            Queue(-1),
-            url=LOKI_ENDPOINT,
-            tags={'application': name},
-            version='1'
+            Queue(-1), url=LOKI_ENDPOINT, tags={"application": name}, version="1"
         )
         logger_instance.addHandler(loki_handler)
 

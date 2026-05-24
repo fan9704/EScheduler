@@ -9,17 +9,17 @@ from src.services.statistic import StatisticService
 
 @pytest.mark.asyncio
 class TestStatisticService:
-
     async def async_set_up_service(self):
         """建立 StatisticService 並 mock repository"""
         service = StatisticService()
 
         # mock repository 方法
         service.task_repository.count_all_tasks = AsyncMock(return_value=10)
-        service.task_repository.count_tasks_by_state = AsyncMock(side_effect=lambda state: {
-            TaskState.ENABLED: 7,
-            TaskState.DISABLED: 3
-        }[state])
+        service.task_repository.count_tasks_by_state = AsyncMock(
+            side_effect=lambda state: {TaskState.ENABLED: 7, TaskState.DISABLED: 3}[
+                state
+            ]
+        )
         service.execution_repository.count_today_executions = AsyncMock(return_value=5)
 
         return service

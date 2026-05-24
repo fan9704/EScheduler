@@ -11,7 +11,7 @@ router = APIRouter()
 
 @router.get("/dashboard-metrics", response_model=StatisticDashboardMetricResponse)
 async def get_dashboard_metrics(
-        service: StatisticService = Depends(get_statistic_service)
-) -> Dict[str, Any]:
+    service: StatisticService = Depends(get_statistic_service),
+) -> StatisticDashboardMetricResponse:
     """獲取統計儀表板指標"""
     return await service.get_dashboard_metrics()

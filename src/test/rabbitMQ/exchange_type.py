@@ -1,14 +1,15 @@
 import asyncio
 import aio_pika
 
+
 async def consume(exchange_name, exchange_type_str: str, queue_name, routing_key=""):
     connection = await aio_pika.connect_robust("amqp://guest:guest@localhost/")
     channel = await connection.channel()
-    exchange_type = getattr(aio_pika.ExchangeType, exchange_type_str.upper(), aio_pika.ExchangeType.DIRECT)
+    exchange_type = getattr(
+        aio_pika.ExchangeType, exchange_type_str.upper(), aio_pika.ExchangeType.DIRECT
+    )
     exchange = await channel.declare_exchange(
-        exchange_name,
-        exchange_type,
-        durable=True
+        exchange_name, exchange_type, durable=True
     )
 
     queue = await channel.declare_queue(queue_name, durable=True)
@@ -20,6 +21,7 @@ async def consume(exchange_name, exchange_type_str: str, queue_name, routing_key
         async for message in queue_iter:
             async with message.process():
                 print(f"Received from {queue_name}: {message.body.decode()}")
+
 
 if __name__ == "__main__":
     asyncio.run(consume("my_direct_exchange", "direct", "direct_queue", "task"))

@@ -4,11 +4,15 @@ from unittest.mock import AsyncMock
 
 import pytest
 from fastapi.responses import JSONResponse
+from fastapi import status
 
 from src.models.enum.scheduler import TaskState, TargetType
 from src.models.pydantic.scheduler import (
-    ScheduledTaskCreate, ScheduledTaskUpdate, ScheduledTaskResponse,
-    SchedulerStatsResponse, TaskStateUpdateRequest
+    ScheduledTaskCreate,
+    ScheduledTaskUpdate,
+    ScheduledTaskResponse,
+    SchedulerStatsResponse,
+    TaskStateUpdateRequest,
 )
 from src.routers import scheduler
 
@@ -16,6 +20,7 @@ from src.routers import scheduler
 # ---------------------------------------------------------------------------
 # ✅ 測試 create_task
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_create_task_success():
@@ -37,7 +42,7 @@ async def test_create_task_success():
         retry_policy=None,
         dead_letter_config=None,
         created_at=datetime.now(),
-        updated_at=datetime.now()
+        updated_at=datetime.now(),
     )
 
     payload = ScheduledTaskCreate(
@@ -45,7 +50,7 @@ async def test_create_task_success():
         description="Desc",
         schedule_expression="rate(5 minutes)",
         target_type=TargetType.EMAIL,
-        target_arn="arn:aws:email"
+        target_arn="arn:aws:email",
     )
 
     result = await scheduler.create_task(payload, service=mock_service)
@@ -57,6 +62,7 @@ async def test_create_task_success():
 # ---------------------------------------------------------------------------
 # ✅ 測試 get_all_tasks
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_get_all_tasks_success():
@@ -79,7 +85,7 @@ async def test_get_all_tasks_success():
             retry_policy=None,
             dead_letter_config=None,
             created_at=datetime.now(),
-            updated_at=datetime.now()
+            updated_at=datetime.now(),
         ),
         ScheduledTaskResponse(
             id=2,
@@ -98,11 +104,13 @@ async def test_get_all_tasks_success():
             retry_policy=None,
             dead_letter_config=None,
             created_at=datetime.now(),
-            updated_at=datetime.now()
-        )
+            updated_at=datetime.now(),
+        ),
     ]
 
-    result = await scheduler.get_all_tasks(state=None, target_type=None, service=mock_service)
+    result = await scheduler.get_all_tasks(
+        state=None, target_type=None, service=mock_service
+    )
 
     assert len(result) == 2
     mock_service.get_all_tasks.assert_awaited_once_with(None, None)
@@ -111,6 +119,7 @@ async def test_get_all_tasks_success():
 # ---------------------------------------------------------------------------
 # ✅ 測試 get_scheduler_stats
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_get_scheduler_stats_success():
@@ -121,7 +130,7 @@ async def test_get_scheduler_stats_success():
         disabled_tasks=2,
         total_executions_today=10,
         successful_executions_today=8,
-        failed_executions_today=2
+        failed_executions_today=2,
     )
 
     result = await scheduler.get_scheduler_stats(service=mock_service)
@@ -133,6 +142,7 @@ async def test_get_scheduler_stats_success():
 # ---------------------------------------------------------------------------
 # ✅ 測試 update_task
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_update_task_success():
@@ -154,11 +164,13 @@ async def test_update_task_success():
         retry_policy=None,
         dead_letter_config=None,
         created_at=datetime.now(),
-        updated_at=datetime.now()
+        updated_at=datetime.now(),
     )
 
     payload = ScheduledTaskUpdate(name="Updated Task")
-    result = await scheduler.update_task(task_id=10, task_data=payload, service=mock_service)
+    result = await scheduler.update_task(
+        task_id=10, task_data=payload, service=mock_service
+    )
 
     assert result.name == "Updated Task"
     mock_service.update_task.assert_awaited_once_with(10, payload)
@@ -168,6 +180,7 @@ async def test_update_task_success():
 # ✅ 測試 delete_task
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_delete_task_success():
     mock_service = AsyncMock()
@@ -176,7 +189,7 @@ async def test_delete_task_success():
     result = await scheduler.delete_task(task_id=3, service=mock_service)
 
     assert isinstance(result, JSONResponse)
-    assert result.status_code == 200
+    assert result.status_code == status.HTTP_200_OK
     assert "任務已成功刪除" in result.body.decode()
     mock_service.delete_task.assert_awaited_once_with(3)
 
@@ -205,7 +218,7 @@ async def test_search_tasks_success():
             retry_policy=None,
             dead_letter_config=None,
             created_at=datetime.now(),
-            updated_at=datetime.now()
+            updated_at=datetime.now(),
         )
     ]
     result = await scheduler.search_tasks(keyword="Task", service=mock_service)
@@ -237,7 +250,7 @@ async def test_get_task_success():
         retry_policy=None,
         dead_letter_config=None,
         created_at=datetime.now(),
-        updated_at=datetime.now()
+        updated_at=datetime.now(),
     )
     result = await scheduler.get_task(task_id=1, service=mock_service)
     assert result.id == 1
@@ -267,10 +280,12 @@ async def test_update_task_state_success():
         retry_policy=None,
         dead_letter_config=None,
         created_at=datetime.now(),
-        updated_at=datetime.now()
+        updated_at=datetime.now(),
     )
     state_data = TaskStateUpdateRequest(state=TaskState.DISABLED)
-    result = await scheduler.update_task_state(task_id=1, state_data=state_data, service=mock_service)
+    result = await scheduler.update_task_state(
+        task_id=1, state_data=state_data, service=mock_service
+    )
     assert result.state == TaskState.DISABLED.value
     mock_service.update_task_state.assert_awaited_once_with(1, state_data)
 
@@ -284,7 +299,7 @@ async def test_trigger_task_success():
     mock_service.trigger_task_now.return_value = True
     result = await scheduler.trigger_task(task_id=1, service=mock_service)
     assert isinstance(result, JSONResponse)
-    assert result.status_code == 200
+    assert result.status_code == status.HTTP_200_OK
     assert "任務觸發成功" in result.body.decode()
     mock_service.trigger_task_now.assert_awaited_once_with(1)
 
@@ -295,19 +310,22 @@ async def test_trigger_task_failed():
     mock_service.trigger_task_now.return_value = False
     result = await scheduler.trigger_task(task_id=2, service=mock_service)
     assert isinstance(result, JSONResponse)
-    assert result.status_code == 500
+    assert result.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
     assert "任務執行失敗" in result.body.decode()
     mock_service.trigger_task_now.assert_awaited_once_with(2)
+
 
 @pytest.mark.asyncio
 async def test_trigger_task_http_exception():
     mock_service = AsyncMock()
-    mock_service.trigger_task_now.side_effect = HTTPException(status_code=404, detail="Task not found")
+    mock_service.trigger_task_now.side_effect = HTTPException(
+        status_code=404, detail="Task not found"
+    )
 
     result = await scheduler.trigger_task(task_id=1, service=mock_service)
 
     assert isinstance(result, JSONResponse)
-    assert result.status_code == 404
+    assert result.status_code == status.HTTP_404_NOT_FOUND
     assert "Task not found" in result.body.decode()
     mock_service.trigger_task_now.assert_awaited_once_with(1)
 
@@ -320,6 +338,6 @@ async def test_trigger_task_general_exception():
     result = await scheduler.trigger_task(task_id=1, service=mock_service)
 
     assert isinstance(result, JSONResponse)
-    assert result.status_code == 500
+    assert result.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
     assert "觸發任務失敗: Unexpected error" in result.body.decode()
     mock_service.trigger_task_now.assert_awaited_once_with(1)

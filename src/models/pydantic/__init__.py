@@ -4,7 +4,7 @@ from .scheduler import (
     ScheduledTaskResponse,
     TaskExecutionResponse,
     SchedulerStatsResponse,
-    TaskStateUpdateRequest
+    TaskStateUpdateRequest,
 )
 from .email_template import (
     EmailTemplateCreate,
@@ -17,7 +17,7 @@ from .email_template import (
     EmailTaskResponse,
     EmailSendRequest,
     EmailSendResponse,
-    TemplateVariable
+    TemplateVariable,
 )
 
 from .strategy import ExecutionResult
@@ -25,7 +25,7 @@ from .statistic import StatisticDashboardMetricResponse
 
 __all__ = [
     "ScheduledTaskCreate",
-    "ScheduledTaskUpdate", 
+    "ScheduledTaskUpdate",
     "ScheduledTaskResponse",
     "TaskExecutionResponse",
     "SchedulerStatsResponse",
@@ -43,5 +43,5 @@ __all__ = [
     "EmailTaskResponse",
     "EmailSendRequest",
     "EmailSendResponse",
-    "TemplateVariable"
+    "TemplateVariable",
 ]

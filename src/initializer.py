@@ -1,5 +1,6 @@
 import logging
 from inspect import getmembers
+from typing import List
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI
@@ -35,22 +36,18 @@ async def init_db(app: FastAPI):
     config = {
         "use_tz": True,
         "timezone": "Asia/Taipei",
-        "connections": {
-            "default": tortoise_config.db_url
-        },
+        "connections": {"default": tortoise_config.db_url},
         "apps": {
             "models": {
                 "models": [
                     "src.models.tortoise.scheduler",
-                    "src.models.tortoise.email_template"
+                    "src.models.tortoise.email_template",
                 ],
-                'default_connection': 'default',
+                "default_connection": "default",
             }
-        }
+        },
     }
-    await Tortoise.init(
-        config=config
-    )
+    await Tortoise.init(config=config)
     await Tortoise.generate_schemas()
 
 
@@ -63,9 +60,11 @@ def init_routers(app: FastAPI):
 
     from src import routers
 
-    routers = [o[1] for o in getmembers(routers) if isinstance(o[1], TypedAPIRouter)]
+    router_list: List[TypedAPIRouter] = [
+        o[1] for o in getmembers(routers) if isinstance(o[1], TypedAPIRouter)
+    ]
 
-    for router in routers:
+    for router in router_list:
         app.include_router(**router.model_dump())
 
 

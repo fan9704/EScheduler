@@ -5,7 +5,7 @@ from src.models.pydantic.email_template import (
     EmailTemplateUpdate,
     EmailTemplateResponse,
     EmailTemplatePreview,
-    EmailTemplatePreviewResponse
+    EmailTemplatePreviewResponse,
 )
 from src.services.email_template import EmailTemplateService
 from src.dependencies.services import get_email_template_service
@@ -16,25 +16,22 @@ router = APIRouter()
 
 @router.get("", response_model=List[EmailTemplateResponse])
 async def list_templates(
-        is_active: Optional[bool] = Query(None, description="是否啟用"),
-        search: Optional[str] = Query(None, description="搜索關鍵字"),
-        limit: int = Query(100, ge=1, le=1000, description="返回數量限制"),
-        offset: int = Query(0, ge=0, description="偏移量"),
-        service: EmailTemplateService = Depends(get_email_template_service)
+    is_active: Optional[bool] = Query(None, description="是否啟用"),
+    search: Optional[str] = Query(None, description="搜索關鍵字"),
+    limit: int = Query(100, ge=1, le=1000, description="返回數量限制"),
+    offset: int = Query(0, ge=0, description="偏移量"),
+    service: EmailTemplateService = Depends(get_email_template_service),
 ):
     """獲取 Email 模板列表"""
     return await service.list_templates(
-        is_active=is_active,
-        search=search,
-        limit=limit,
-        offset=offset
+        is_active=is_active, search=search, limit=limit, offset=offset
     )
 
 
 @router.post("", response_model=EmailTemplateResponse)
 async def create_email_template(
-        template_data: EmailTemplateCreate,
-        service: EmailTemplateService = Depends(get_email_template_service)
+    template_data: EmailTemplateCreate,
+    service: EmailTemplateService = Depends(get_email_template_service),
 ):
     """創建新的 Email 模板"""
     try:
@@ -46,8 +43,8 @@ async def create_email_template(
 
 @router.get("/{template_id}", response_model=EmailTemplateResponse)
 async def get_email_template(
-        template_id: int,
-        service: EmailTemplateService = Depends(get_email_template_service)
+    template_id: int,
+    service: EmailTemplateService = Depends(get_email_template_service),
 ):
     """獲取單個 Email 模板"""
     try:
@@ -64,9 +61,9 @@ async def get_email_template(
 
 @router.put("/{template_id}", response_model=EmailTemplateResponse)
 async def update_email_template(
-        template_id: int,
-        template_data: EmailTemplateUpdate,
-        service: EmailTemplateService = Depends(get_email_template_service)
+    template_id: int,
+    template_data: EmailTemplateUpdate,
+    service: EmailTemplateService = Depends(get_email_template_service),
 ):
     """更新 Email 模板"""
     try:
@@ -83,8 +80,8 @@ async def update_email_template(
 
 @router.delete("/{template_id}", status_code=204)
 async def delete_email_template(
-        template_id: int,
-        service: EmailTemplateService = Depends(get_email_template_service)
+    template_id: int,
+    service: EmailTemplateService = Depends(get_email_template_service),
 ):
     """刪除 Email 模板"""
     try:
@@ -99,8 +96,8 @@ async def delete_email_template(
 
 @router.post("/preview", response_model=EmailTemplatePreviewResponse)
 async def preview_email_template(
-        preview_data: EmailTemplatePreview,
-        service: EmailTemplateService = Depends(get_email_template_service)
+    preview_data: EmailTemplatePreview,
+    service: EmailTemplateService = Depends(get_email_template_service),
 ):
     """預覽 Email 模板"""
     try:

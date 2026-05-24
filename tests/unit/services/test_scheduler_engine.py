@@ -4,7 +4,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 
 from src.models.enum.scheduler import TaskState, ExecutionStatus, TargetType
 from src.models.pydantic.scheduler import (
@@ -275,4 +275,4 @@ class TestSchedulerService:
 
         assert len(result_models) == 1
         assert result_models[0].id == 1
-        assert result_models[0].response_code == 200
+        assert result_models[0].response_code == status.HTTP_200_OK

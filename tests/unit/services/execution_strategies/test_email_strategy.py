@@ -5,7 +5,6 @@ from src.models.pydantic.strategy import ExecutionResult
 
 
 class TestEmailExecutionStrategy(unittest.IsolatedAsyncioTestCase):
-
     async def asyncSetUp(self):
         self.strategy = EmailExecutionStrategy()
 
@@ -14,10 +13,7 @@ class TestEmailExecutionStrategy(unittest.IsolatedAsyncioTestCase):
         """模擬直接發送成功"""
         mock_send.return_value = None
         target_arn = "test@example.com"
-        target_input = {
-            "subject": "測試主題",
-            "body": "測試內容"
-        }
+        target_input = {"subject": "測試主題", "body": "測試內容"}
 
         result: ExecutionResult = await self.strategy.execute(target_arn, target_input)
 
@@ -27,23 +23,30 @@ class TestEmailExecutionStrategy(unittest.IsolatedAsyncioTestCase):
         # self.assertEqual(result.data["subject"], "測試主題")
         mock_send.assert_awaited_once()
 
-    @patch("aiosmtplib.send", new_callable=AsyncMock, side_effect=Exception("SMTP fail"))
+    @patch(
+        "aiosmtplib.send", new_callable=AsyncMock, side_effect=Exception("SMTP fail")
+    )
     async def test_send_direct_failure(self, mock_send):
         """模擬直接發送失敗"""
         target_arn = "test@example.com"
-        target_input = {
-            "subject": "測試主題",
-            "body": "測試內容"
-        }
+        target_input = {"subject": "測試主題", "body": "測試內容"}
 
         result: ExecutionResult = await self.strategy.execute(target_arn, target_input)
         self.assertFalse(result.success)
         self.assertIn("郵件發送失敗", result.message)
 
-    @patch("src.models.tortoise.email_template.EmailTemplate.get_or_none", new_callable=AsyncMock)
+    @patch(
+        "src.models.tortoise.email_template.EmailTemplate.get_or_none",
+        new_callable=AsyncMock,
+    )
     @patch("aiosmtplib.send", new_callable=AsyncMock)
-    @patch("src.models.tortoise.email_template.EmailTemplateUsage.create", new_callable=AsyncMock)
-    async def test_send_template_success(self, mock_create_usage, mock_send, mock_get_template):
+    @patch(
+        "src.models.tortoise.email_template.EmailTemplateUsage.create",
+        new_callable=AsyncMock,
+    )
+    async def test_send_template_success(
+        self, mock_create_usage, mock_send, mock_get_template
+    ):
         """模擬使用模板發送成功"""
         template = MagicMock()
         template.subject_template = "Hello {{ name }}"
@@ -67,7 +70,7 @@ class TestEmailExecutionStrategy(unittest.IsolatedAsyncioTestCase):
         target_input = {
             "use_template": True,
             "template_id": 1,
-            "template_variables": {"name": "KT"}
+            "template_variables": {"name": "KT"},
         }
 
         result: ExecutionResult = await self.strategy.execute(target_arn, target_input)

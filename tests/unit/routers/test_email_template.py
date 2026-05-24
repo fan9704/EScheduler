@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import AsyncMock
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 from datetime import datetime, timezone
 
 from src.routers import email_template
@@ -14,6 +14,7 @@ from src.models.pydantic.email_template import (
 # ---------------------------------------------------------------------------
 # ✅ 建立 Email Template 測試
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_create_email_template_success():
@@ -66,13 +67,14 @@ async def test_create_email_template_exception():
     with pytest.raises(HTTPException) as exc_info:
         await email_template.create_email_template(payload, service=mock_service)
 
-    assert exc_info.value.status_code == 400
+    assert exc_info.value.status_code == status.HTTP_400_BAD_REQUEST
     assert "DB Error" in exc_info.value.detail
 
 
 # ---------------------------------------------------------------------------
 # ✅ 取得 Template 測試
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_get_email_template_not_found():
@@ -83,7 +85,7 @@ async def test_get_email_template_not_found():
     with pytest.raises(HTTPException) as exc_info:
         await email_template.get_email_template(999, service=mock_service)
 
-    assert exc_info.value.status_code == 404
+    assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
     assert exc_info.value.detail == "模板不存在"
 
 
@@ -102,6 +104,7 @@ async def test_get_email_template_success():
 # ✅ 更新 Template 測試
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_update_email_template_success():
     """測試成功更新 Template"""
@@ -110,7 +113,9 @@ async def test_update_email_template_success():
 
     payload = EmailTemplateUpdate(name="Updated")
 
-    result = await email_template.update_email_template(1, payload, service=mock_service)
+    result = await email_template.update_email_template(
+        1, payload, service=mock_service
+    )
     assert result["name"] == "Updated"
     mock_service.update_template.assert_awaited_once_with(1, payload)
 
@@ -126,13 +131,14 @@ async def test_update_email_template_not_found():
     with pytest.raises(HTTPException) as exc_info:
         await email_template.update_email_template(999, payload, service=mock_service)
 
-    assert exc_info.value.status_code == 404
+    assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
     assert "模板不存在" in exc_info.value.detail
 
 
 # ---------------------------------------------------------------------------
 # ✅ 刪除 Template 測試
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_delete_email_template_exception():
@@ -143,13 +149,14 @@ async def test_delete_email_template_exception():
     with pytest.raises(HTTPException) as exc_info:
         await email_template.delete_email_template(1, service=mock_service)
 
-    assert exc_info.value.status_code == 500
+    assert exc_info.value.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
     assert "刪除模板失敗" in exc_info.value.detail
 
 
 # ---------------------------------------------------------------------------
 # ✅ 預覽 Template 測試
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_preview_email_template_success():
@@ -187,11 +194,7 @@ async def test_list_templates_success():
     ]
 
     result = await email_template.list_templates(
-        is_active=True,
-        search="Welcome",
-        limit=10,
-        offset=0,
-        service=mock_service
+        is_active=True, search="Welcome", limit=10, offset=0, service=mock_service
     )
 
     assert len(result) == 2
@@ -206,9 +209,7 @@ async def test_list_templates_exception():
     mock_service.list_templates.side_effect = Exception("DB Error")
 
     with pytest.raises(Exception) as exc_info:
-        await email_template.list_templates(
-            service=mock_service
-        )
+        await email_template.list_templates(service=mock_service)
     # 可以加 logger 檢查或直接 assert Exception message
     assert "DB Error" in str(exc_info.value)
 
@@ -219,7 +220,9 @@ async def test_list_templates_exception():
 @pytest.mark.asyncio
 async def test_delete_email_template_success():
     mock_service = AsyncMock()
-    mock_service.delete_template.return_value = None  # delete 沒有回傳，router 成功會 204
+    mock_service.delete_template.return_value = (
+        None  # delete 沒有回傳，router 成功會 204
+    )
 
     response = await email_template.delete_email_template(1, service=mock_service)
 
@@ -239,7 +242,7 @@ async def test_get_email_template_exception():
     with pytest.raises(HTTPException) as exc_info:
         await email_template.get_email_template(1, service=mock_service)
 
-    assert exc_info.value.status_code == 500
+    assert exc_info.value.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
     assert "獲取模板失敗" in exc_info.value.detail
 
 
@@ -256,7 +259,7 @@ async def test_update_email_template_exception():
     with pytest.raises(HTTPException) as exc_info:
         await email_template.update_email_template(1, payload, service=mock_service)
 
-    assert exc_info.value.status_code == 500
+    assert exc_info.value.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
     assert "更新模板失敗" in exc_info.value.detail
 
 
@@ -271,22 +274,7 @@ async def test_delete_email_template_exception_router():
     with pytest.raises(HTTPException) as exc_info:
         await email_template.delete_email_template(1, service=mock_service)
 
-    assert exc_info.value.status_code == 500
-    assert "刪除模板失敗" in exc_info.value.detail
-
-
-# -----------------------------------------
-# DELETE /{template_id} 發生 Exception
-# -----------------------------------------
-@pytest.mark.asyncio
-async def test_delete_email_template_exception_router():
-    mock_service = AsyncMock()
-    mock_service.delete_template.side_effect = HTTPException(500, "Delete fail")
-
-    with pytest.raises(HTTPException) as exc_info:
-        await email_template.delete_email_template(1, service=mock_service)
-
-    assert exc_info.value.status_code == 500
+    assert exc_info.value.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
     assert "刪除模板失敗" in exc_info.value.detail
 
 
@@ -308,5 +296,5 @@ async def test_preview_email_template_exception():
     with pytest.raises(HTTPException) as exc_info:
         await email_template.preview_email_template(payload, service=mock_service)
 
-    assert exc_info.value.status_code == 400
+    assert exc_info.value.status_code == status.HTTP_400_BAD_REQUEST
     assert "Preview fail" in exc_info.value.detail

@@ -4,20 +4,23 @@ from fastapi import APIRouter, Depends
 from src.dependencies.services import get_schedule_helper_service
 from src.services.schedule_helper import ScheduleHelperService
 from src.models.pydantic.schedule_helper import (
-    RateExpressionRequest, CronExpressionRequest, QuickScheduleRequest,
-    ScheduleExpressionResponse, ScheduleValidationRequest, ScheduleValidationResponse,
-    ScheduleTemplateResponse, CronHelpResponse
+    RateExpressionRequest,
+    CronExpressionRequest,
+    QuickScheduleRequest,
+    ScheduleExpressionResponse,
+    ScheduleValidationRequest,
+    ScheduleValidationResponse,
+    ScheduleTemplateResponse,
+    CronHelpResponse,
 )
 
 router = APIRouter()
 
 
-
-
 @router.post("/rate", response_model=ScheduleExpressionResponse)
 async def generate_rate_expression(
     request: RateExpressionRequest,
-    service: ScheduleHelperService = Depends(get_schedule_helper_service)
+    service: ScheduleHelperService = Depends(get_schedule_helper_service),
 ) -> ScheduleExpressionResponse:
     """生成 Rate 排程表達式"""
     return await service.generate_rate_expression(request)
@@ -26,7 +29,7 @@ async def generate_rate_expression(
 @router.post("/cron", response_model=ScheduleExpressionResponse)
 async def generate_cron_expression(
     request: CronExpressionRequest,
-    service: ScheduleHelperService = Depends(get_schedule_helper_service)
+    service: ScheduleHelperService = Depends(get_schedule_helper_service),
 ) -> ScheduleExpressionResponse:
     """生成 Cron 排程表達式"""
     return await service.generate_cron_expression(request)
@@ -35,7 +38,7 @@ async def generate_cron_expression(
 @router.post("/quick", response_model=ScheduleExpressionResponse)
 async def generate_quick_schedule(
     request: QuickScheduleRequest,
-    service: ScheduleHelperService = Depends(get_schedule_helper_service)
+    service: ScheduleHelperService = Depends(get_schedule_helper_service),
 ) -> ScheduleExpressionResponse:
     """生成快速排程表達式"""
     return await service.generate_quick_schedule(request)
@@ -44,7 +47,7 @@ async def generate_quick_schedule(
 @router.post("/validate", response_model=ScheduleValidationResponse)
 async def validate_schedule_expression(
     request: ScheduleValidationRequest,
-    service: ScheduleHelperService = Depends(get_schedule_helper_service)
+    service: ScheduleHelperService = Depends(get_schedule_helper_service),
 ) -> ScheduleValidationResponse:
     """驗證排程表達式"""
     return await service.validate_expression(request)
@@ -52,7 +55,7 @@ async def validate_schedule_expression(
 
 @router.get("/templates", response_model=List[ScheduleTemplateResponse])
 async def get_schedule_templates(
-    service: ScheduleHelperService = Depends(get_schedule_helper_service)
+    service: ScheduleHelperService = Depends(get_schedule_helper_service),
 ) -> List[ScheduleTemplateResponse]:
     """獲取排程模板"""
     return await service.get_schedule_templates()
@@ -60,7 +63,7 @@ async def get_schedule_templates(
 
 @router.get("/cron-help", response_model=List[CronHelpResponse])
 async def get_cron_help(
-    service: ScheduleHelperService = Depends(get_schedule_helper_service)
+    service: ScheduleHelperService = Depends(get_schedule_helper_service),
 ) -> List[CronHelpResponse]:
     """獲取 Cron 表達式幫助信息"""
     return await service.get_cron_help()

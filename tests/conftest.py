@@ -1,4 +1,3 @@
-import pytest
 import pytest_asyncio
 from tortoise import Tortoise
 
@@ -15,9 +14,9 @@ async def in_memory_db():
         modules={
             "models": [
                 "src.models.tortoise.scheduler",
-                "src.models.tortoise.email_template"
+                "src.models.tortoise.email_template",
             ],
-        }
+        },
     )
 
     # 生成資料表

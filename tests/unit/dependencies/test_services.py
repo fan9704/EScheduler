@@ -1,5 +1,9 @@
-from src.dependencies.services import get_scheduler_service, get_statistic_service, \
-    get_schedule_helper_service, get_email_template_service
+from src.dependencies.services import (
+    get_scheduler_service,
+    get_statistic_service,
+    get_schedule_helper_service,
+    get_email_template_service,
+)
 from src.services.email_template import EmailTemplateService
 from src.services.schedule_helper import ScheduleHelperService
 from src.services.scheduler import SchedulerService
@@ -7,7 +11,6 @@ from src.services.statistic import StatisticService
 
 
 class TestServiceDependencies:
-
     def test_get_scheduler_service_returns_new_instance(self):
         s1 = get_scheduler_service()
         s2 = get_scheduler_service()

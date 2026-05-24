@@ -39,4 +39,6 @@ def test_schedule_expression_invalid():
             target_type=TargetType.HTTP,
             target_arn="arn:aws:lambda:region:account:function:test",
         )
-    assert "排程表達式必須是 cron(expression) 或 rate(expression) 格式" in str(exc_info.value)
+    assert "排程表達式必須是 cron(expression) 或 rate(expression) 格式" in str(
+        exc_info.value
+    )
